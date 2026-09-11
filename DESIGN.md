@@ -2,68 +2,80 @@
 
 This document puts Verity's weaknesses first. It is more credible to state them than to let a reviewer find them.
 
+## The good (v2)
+A k-of-N sealed basket of federal False Claims Act cases: "3 of 12 sealed federal fraud cases will produce a DOJ settlement release by Oct 11." The count, deadline and resolver are public and composed by the contract. Which cases is the sealed good, bound at commit by a Merkle root over salted items. The buyer can compare the claim to what chance would do: *expected by chance*, *random-basket odds* and *seller lift* are on every listing. v1 sold "Federal Register document X will publish", which is true by construction and worth nothing; v2 replaces it (spec: `docs/superpowers/specs/2026-09-11-fca-basket-v2-design.md`).
+
 ## Limitations
 
-### 1. The velocity gap
-The Truth API sells 200 milliseconds; Verity sells weeks. They are different products. Verity cannot match the Truth API's latency without becoming a leak market. The only way to be faster than a public record is to know what it will say before it exists. That means recruiting insiders, which breaks the legal foundation Verity rests on: sellers are observers of public records, not people with a duty of confidentiality. Verity's latency is bounded by how quickly observers can notice something already on the record, and it will stay that way.
+### 1. The measured edge is modest and the sample is small
+`research/backtest-fca.py` matched CourtListener RECAP notices to 2,000 justice.gov FCA press releases (2015–2026). Settlement-intervention notices drew a release naming the defendant within 30 days 9.6% of the time (8/83) and within 60 days 10.8% (9/83). Declined cases, the base rate: 1.8% (2/114) and 5.3% (6/114). The lift is about 5× at 30 days and 2× at 60, because settlement releases cluster early (median lead 14 days vs 41). With nine signal hits, the confidence intervals are wide. The design spec quoted 14% vs 2%; that figure came from an earlier matcher whose generic caption words ("University", "Mortgage", "Michigan") produced false matches, and it is superseded. Both rates are floors: title-only matching misses releases that name the defendant only in the body. Odds between the measured points are piecewise linear (0 → 30 d → 60 d, flat after), which is a stated approximation.
 
-### 2. The mirror objection
-**The objection, in full.** Verity presents itself as the moral inverse of the Truth API. Yet the best-capitalized buyer we name is the activist short seller. The product sells private, market-moving claims about public contractors before they are published. That is structurally the same thing as the Truth API: a paid window of early access to information that moves prices, sold to people who trade on it. The difference is only a matter of degree.
+### 2. Matching is a rule, not judgment
+An item hits when a justice.gov release after the commit, in an FCA context (topic, "False Claims" in the title, or "qui tam" in the body), has a title that names one of the item's match terms on a word boundary. Match terms must be at least 6 letters and not in the shared stoplist (`app/lib/fca-stoplist.json`, which the backtest uses too). A distinctive surname term can still false-match ("Martin"); a subsidiary announced under a parent's name can miss. The oracle re-applies the rule, so a seller cannot smuggle in a generic term, and disputes with a corrected hit mask go to the owner backstop.
+
+### 3. Replays are demonstrations, not forecasts
+`DOJ_FCA_REPLAY` exists so the demo can settle in minutes. Its items' outcomes are already public. Replay claims pay out normally but never touch `SellerRecord`, and the app excludes them from Brier and lift. The UI labels them everywhere.
+
+### 4. The velocity gap
+Verity sells weeks, not milliseconds. The only way to be faster than a public record is to know what it will say before it exists, which means recruiting insiders, and that breaks the legal foundation Verity rests on: sellers read public dockets; they do not have a duty of confidentiality.
+
+### 5. The mirror objection
+**The objection.** A basket of defendants about to settle with DOJ is market-moving for public contractors. Selling it before publication looks like the Truth API: a paid window of early access to price-moving information.
 
 **The answer.**
-- **Publication is unavoidable and scheduled.** The exclusivity window is fixed at commit, before anyone knows what the package is worth, and when it ends the key opens to everyone (`canDecrypt` returns true for any address). The Truth API's window exists to keep non-payers out permanently. Verity's window exists to end.
-- **The seller base is observers, not insiders.** Every commit carries an attestation that the evidence comes solely from lawfully obtained public records, with no classified material and no MNPI. The contract rejects commits without it. The resolver whitelist means claims have to be about things that institutions will publish.
-- **No duty is breached.** The inputs are aggregated public records. An activist short seller who buys a Verity finding knows only what anyone could have learned by reading the Federal Register, the docket, or SAM.gov that morning. The seller is selling the labor of reading, not a breach of confidence.
-- **Suppression doesn't pay.** A buyer who holds a true finding past the deadline gets no refund; the contingent tranche goes to a public-goods pool.
+- **Every input is already public.** The sealed notice sits on a public docket (RECAP). The seller sells the labor of reading hundreds of dockets, not a breach of confidence. Every commit carries the no-MNPI attestation, and the contract rejects commits without it.
+- **Publication is unavoidable and scheduled.** Exclusivity is fixed at commit; when it ends the key opens to everyone. The resolver is DOJ itself, which publishes regardless.
+- **Suppression doesn't pay.** A true basket that is not public by the deadline sends the contingent tranche to a public-goods pool.
 
-The objection still carries weight: for a few weeks some buyers know something the public does not. We think a short, fixed window is an acceptable price for paying people to read public records.
+The objection still carries weight: for a few weeks some buyers know which cases are in the basket. We think a short, fixed window is an acceptable price for paying people to read public records.
 
-### 3. Supply is the residual
-Good leads are mostly written up by whoever holds them. Verity clears the findings whose holder lacks the distribution, the capital to wait for resolution, or the time to finish the story. That is a real market, but it caps quality: the best findings seldom reach it. **Underwriting pools** (below) are the mechanism that raises the ceiling, because they let a credible reporter post a bond they could not afford alone.
+### 6. Supply is the residual
+Good leads are mostly used by whoever holds them. Verity clears what the holder cannot use: no distribution, no capital to wait. **Underwriting pools** (below) raise that ceiling.
 
-### 4. The relevance preview is a Bloom filter, not PSI
-A buyer declares a beat and learns *how many* of their entities a package touches, computed locally against a 512-bit, k=4 Bloom filter of normalized identifiers (`app/lib/bloom.ts`). The buyer's beat never leaves the client. However, **the filter can be probed**: a determined buyer can test candidate identifiers one at a time and learn which entities are (probably) present. The filter also has false positives. Upgrade path: OPRF-based private set intersection (the seller evaluates an OPRF over the buyer's blinded set), or computing the intersection inside an enclave that attests to returning only a count.
+### 7. The relevance preview is a Bloom filter, not PSI
+Buyers intersect a watchlist (`defendant:<term>`, `court:<name>`) with a 512-bit, k=4 Bloom filter locally and see a count. **The filter can be probed** one candidate at a time, and it has false positives. Upgrade path: OPRF-based private set intersection, or an enclave that attests to returning only a count.
 
 ## Trust model: stated plainly
 
 | Component | Who you trust | What they can do wrong | What they cannot do |
 |---|---|---|---|
 | **Escrow + settlement** (`VerityMarket.sol`) | Code on Base Sepolia (verified) | — | — |
-| **Oracle** | A single **bonded proposer**; anyone may dispute within the challenge window (120 s on the demo deployment, 24 h in production) by posting a matching bond; the **owner** resolves disputes | An unchallenged wrong proposal settles wrong. The owner can decide disputes wrongly. | Settle without the window elapsing; move money outside the §2.5 table |
-| **Key release (v1)** | **A stateless custodian** holding one X25519 secret (`/api/key/:id`) | **Release a key early, or refuse to release one.** This is the largest trust assumption in v1. | Forge a purchase, move `exclusivityEnd`, or alter the ciphertext (the hash is on chain) |
-| **Seller** | Nobody. The seller is offline after commit. | Lie. That is what the bond is for. | Stall delivery, choose when publication happens, or swap the payload |
-| **Resolvers** | Federal Register, SAM.gov, CourtListener | — (they are indifferent to the contract) | — |
+| **Oracle** | A single **bonded proposer**; anyone may dispute within the challenge window (120 s on the demo deployment, 24 h in production) by posting a matching bond; the **owner** resolves disputes with a corrected mask | An unchallenged wrong proposal settles wrong. The owner can decide disputes wrongly. | Propose a mask inconsistent with the outcome (the contract checks popcount vs k and the deadline); settle before the window; move money outside the table |
+| **Key release (v1)** | **A stateless custodian** holding one X25519 secret (`/api/key/:id`) | **Release a key early, or refuse to release one.** The largest trust assumption. | Forge a purchase, move `exclusivityEnd`, or alter the ciphertext (the hash is on chain) |
+| **Seller** | Nobody. Offline after commit. | Lie. That is what the bond is for. | Swap items after commit (`itemsRoot`), misstate k or n (the contract writes them), stall delivery |
+| **Resolvers** | justice.gov, CourtListener | — (indifferent to the contract) | — |
 
 This is not a "decentralized oracle." It is an optimistic oracle with one proposer and an owner backstop, and we say so.
 
-### Key release: why the seller is provably not in the delivery path
-At commit, the seller's client generates an AES-256-GCM key K, encrypts the package, and seals K to the key-release layer's public key with `nacl.box`. The sealed key travels inside the envelope, and `keccak256(envelope)` is the on-chain `payloadHash`. From then on, delivering the key needs only three things: the envelope (IPFS, or the commit calldata itself), the custodian's secret, and a read of `canDecrypt(claimId, requester)`, which is `purchased[claimId][requester] || block.timestamp >= exclusivityEnd`. The seller holds none of these. Their machine can be off.
+### Evidence without leaks
+The oracle publishes its evidence JSON with every proposal: per item the leaf, the Merkle proof and hit/miss. Hit items are revealed in full, since their DOJ release is already public. Misses stay sealed until exclusivity ends, so an early TRUE does not give away the pending cases buyers paid for. The claim page recomputes every leaf and proof in the browser against the on-chain root.
 
-**Upgrade: Lit Protocol.** `KeyReleaseProvider` (`app/lib/keyRelease.ts`) is the seam. A `LitKeyRelease` provider encrypts K under Lit with an `evmContractConditions` check on `canDecrypt(:claimId, :userAddress) == true`, which is the same predicate, evaluated by a threshold network so that no single party holds K. We time-boxed Lit and did not get to it in this build. The custodian is the v1 fallback, and its trust assumption is stated above.
+### Key release: why the seller is not in the delivery path
+At commit the seller's client encrypts the basket under a fresh AES-256-GCM key K and seals K to the key-release layer's public key with `nacl.box`. `keccak256(envelope)` is the on-chain `payloadHash`. Delivery needs only the envelope, the custodian's secret, and `canDecrypt(claimId, requester)` (`purchased || block.timestamp >= exclusivityEnd`). **Upgrade: Lit Protocol**: the same predicate evaluated by a threshold network through `KeyReleaseProvider` (`app/lib/keyRelease.ts`).
 
 ## Mechanism notes
-- **Both tranches are escrowed at purchase.** Upfront is forwarded to the seller immediately, and the contingent tranche is held.
-- **Auto-release counts as publication.** `publicByDeadline = (publishedAt != 0 && publishedAt <= deadline) || exclusivityEnd <= deadline`. A seller who picks an exclusivity window shorter than the time to deadline guarantees publication. A seller who picks a longer one accepts that a suppressing buyer can send the contingent tranche to the pool.
-- **Fabricated vs. false.** FALSE means the institution didn't do the thing by the deadline; the seller loses 50% of the bond, split between buyers and the pool. FABRICATED means the payload hash doesn't match, or the cited records don't exist; the seller loses 100%, buyers are made whole on their upfront first, and the remainder goes to the pool. FABRICATED may be proposed at any time. FALSE may only be proposed after the deadline.
-- **Decay.** The upfront ask falls linearly to 50% over the exclusivity window. Leads rot.
-- **Standing bids.** Bids are escrowed in `StandingBids.sol`, and a fill routes through `purchaseFor`, so a filled bid is indistinguishable from a purchase. v1 checks Brier eligibility off-chain from the event log. An on-chain version would need a calibration attestation posted by the oracle.
-- **Novelty.** Each listing shows how many prior open commits have entity filters overlapping more than 30% (Jaccard over set bits). This catches set-splitting and duplicate supply.
-- **Hard rules enforced in code.** Exclusivity is fixed at commit (rule 1). The resolver whitelist, which has no buyer-controlled resolvers, covers rules 2 and 3. The attestation hash is required at commit (rule 4). Novelty is surfaced on every listing (rule 5).
-- **Testnet scaling.** Prices are scaled by 1/1000 so that faucet USDC is enough ($1.78 here would be $1,780).
+- **k-of-N.** `1 ≤ k ≤ n ≤ 64`; the teaser body is ≤ 240 bytes; the deadline is at most 120 days out. TRUE may be proposed as soon as k items hit; FALSE only after the deadline with fewer than k.
+- **Leaves.** `keccak256(keccak256(abi.encode(index, keccak256(canonicalJSON(item)))))`, sorted-pair OpenZeppelin `MerkleProof`. Each item carries a 32-byte salt, so the root cannot be brute-forced from docket lists. `verifyItem` checks any item on chain; a forge test verifies a root produced by the TypeScript code.
+- **Seller lift.** `SellerRecord.itemsHit / itemsCommitted` (settled, non-fabricated, non-replay) divided by p0 for 60 days.
+- **Both tranches are escrowed at purchase.** Upfront is forwarded immediately; contingent is held.
+- **Auto-release counts as publication.** `publicByDeadline = (publishedAt != 0 && publishedAt <= deadline) || exclusivityEnd <= deadline`. The oracle marks a TRUE basket published, since its hits are DOJ press releases.
+- **Fabricated vs. false.** Fewer than k hits is FALSE: 50% of the bond, split between buyers and the pool. A missing docket entry, a payload-hash mismatch, or a basket that does not match the root is FABRICATED: 100%, buyers made whole on their upfront first.
+- **Decay.** The upfront ask falls linearly to 50% over the exclusivity window.
+- **Standing bids.** Escrowed in `StandingBids.sol`; a fill routes through `purchaseFor`.
+- **Novelty.** Each listing shows how many prior open commits have entity filters overlapping more than 30%.
+- **Testnet scaling.** Prices are scaled by 1/1000 ($1.78 here would be $1,780).
 
 ## Designed, not built
-
-### Per-buyer watermarking
-Every buyer of the same claim receives the same plaintext, so a leak can't be traced. Design: at key release, the release layer returns a per-buyer *rendering key*, and the package is stored as a template plus a set of synonym and whitespace substitution slots. The rendering applies a buyer-specific codeword (derived from `HMAC(releaseSecret, buyer ‖ claimId)`), chosen from a collusion-resistant code (Tardos) so that a leaked copy identifies at least one leaking buyer with high probability. The limitation is that summarizing or paraphrasing the finding strips the mark. Watermarking deters verbatim leaks and nothing more. It is stubbed; the interface is `render(pkg, buyer) -> string`.
+Graded (per-hit) payouts; an on-chain base-rate oracle; PSI; Lit key release; per-buyer watermarking.
 
 ### Staked juror dispute layer
-Replaces the owner backstop. Disputes go to a randomly drawn panel of jurors who have staked and are scored against each other in Schelling-point fashion, as in Kleros or UMA's DVM. It is only worth building once dispute volume justifies the latency.
+Replaces the owner backstop with a randomly drawn, staked panel scored in Schelling-point fashion (Kleros, UMA's DVM). Worth building once dispute volume justifies the latency.
 
 ### Underwriting pools, the biggest lever on supply depth
-A third party stakes the bond on behalf of a credible reporter in exchange for a share of the upside: part of the upfront, and part of the contingent on TRUE. The pool also absorbs the slash on FALSE or FABRICATED. The effect is to turn a reporter with a good lead but no capital into a seller whose bond signals confidence, backed by someone who has done their own diligence. The pool's own calibration history, a Brier score across the reporters it has backed, becomes a second-order reputation market. That is how supply grows past the residual.
+A third party stakes the bond for a credible docket reader in exchange for a share of the upside, and absorbs the slash. The pool's own lift across the sellers it backs becomes a second-order reputation market.
 
 ## Roadmap: supply-side moves
-1. **Ship forkable seller agents, not a recruitment pitch.** `app/scripts/seller-fedreg.ts` is the template (poll, detect, package, price, commit). Next up are a state WARN-notice watcher, a county docket watcher, and a SAM.gov exclusions diff.
-2. **Seed standing bids before inventory.** A market with bids and no inventory recruits sellers. A market with inventory and no bids dies.
-3. **Underwriting pools** (above).
-4. **Shorten the oracle.** Favor claim types that resolve in days: Federal Register publication, docket entries, agenda postings, 8-K filings, registry status changes. Faster settlement means faster reputation accrual, so more sellers clear the trust bar each month.
+1. **Forkable seller agents.** `app/scripts/seller-fca.ts` is the template (read, filter, size, commit). The same shape fits any list with an indifferent public resolver: state AG settlements, OIG exclusions, SEC litigation releases.
+2. **Better matching.** Body-text matching with entity resolution would lift both rates off the floor; the backtest and the oracle must change together (they share the stoplist today).
+3. **Seed standing bids before inventory.**
+4. **Underwriting pools** (above).

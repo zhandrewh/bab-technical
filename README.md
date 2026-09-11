@@ -10,47 +10,60 @@ Verity is the inverse of the Truth API. The Truth API sells a *manufactured* win
 
 | Contract | Address |
 |---|---|
-| VerityMarket (verified) | [`0xBe235B1169184272808745c1f2916892Bb0bf9da`](https://sepolia.basescan.org/address/0xBe235B1169184272808745c1f2916892Bb0bf9da#code) |
-| StandingBids (verified) | [`0x473055227638f317A96AaE76C728a89c1554321D`](https://sepolia.basescan.org/address/0x473055227638f317A96AaE76C728a89c1554321D#code) |
+| VerityMarket v2 (verified) | [`0xfef2d6dc0513b0e4b9653f8f3ae042205efda90b`](https://sepolia.basescan.org/address/0xfef2d6dc0513b0e4b9653f8f3ae042205efda90b#code) |
+| StandingBids (verified) | [`0xc475750c04cc208c1c171d9786a0c53a66bbec8e`](https://sepolia.basescan.org/address/0xc475750c04cc208c1c171d9786a0c53a66bbec8e#code) |
 | ERC-8004 Identity Registry | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
 | ERC-8004 Reputation Registry | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
-Read **[DESIGN.md](DESIGN.md)** first. It states the limitations and the trust model before anything else.
+Read **[DESIGN.md](DESIGN.md)** first. It states the limitations and the trust model before anything else. The v2 design is in [docs/superpowers/specs/2026-09-11-fca-basket-v2-design.md](docs/superpowers/specs/2026-09-11-fca-basket-v2-design.md).
 
 ## The good being traded
-The good is a staked, falsifiable claim about what a forthcoming public record will show, plus the sealed evidence trail behind it:
+A **k-of-N sealed basket** of federal False Claims Act cases. The count is public and written by the contract; *which* cases is the sealed good:
+
+> **3 of 12** sealed federal fraud cases will produce a DOJ settlement release by Oct 11
+> Expected by chance: 0.2 of 12 · Random-basket odds: 0.1% · Seller lift — · Bond 7× · Resolves via justice.gov
 
 ```
-claim:      Agency X document N will be published in the Federal Register by D
-resolves:   Federal Register API
-evidence:   committed hash · AES-256-GCM envelope
-bond:       7x upfront
-price:      10% upfront + 90% contingent
-exclusive:  fixed at commit, then auto-public
+items:      defendant, match terms, court, docket, cited notice entry, salt   (sealed, AES-256-GCM)
+commitment: Merkle root over salted items (itemsRoot), on chain at commit
+resolves:   justice.gov press releases after the commit, FCA context, title naming the defendant
+fabricated: any cited docket entry missing on CourtListener, or a basket that does not match the root
 ```
+
+**Why these cases.** Sellers watch sealed qui tam dockets for the United States' notice that it will intervene *for purposes of settlement*. Backtest (`research/backtest-fca.py`, CourtListener RECAP × 2,000 justice.gov FCA releases, 2015–2026):
+
+| Notice type | n | DOJ release naming defendant ≤ 30 d | ≤ 60 d | median lead |
+|---|---|---|---|---|
+| Intervene for settlement (the signal) | 83 | 9.6% | 10.8% | 14 d |
+| Election to decline (the base rate p0) | 114 | 1.8% | 5.3% | 41 d |
+
+Title-only matching makes both rates a floor, and the sample is small (9 signal hits). The app computes every listing's odds from `research/fca-baseline.json`, so rerunning the backtest updates the market.
 
 ## How it works
-1. **Commit.** The seller's client encrypts the package and seals the key to the key-release layer. On chain go the claim hash, payload hash, resolver, deadline, price split, bond, exclusivity window, confidence, and a Bloom filter of entities. *This person knew this, then.*
-2. **Preview.** The buyer intersects their beat with the Bloom filter locally and sees a count, never which entities matched.
-3. **Purchase.** Both tranches are escrowed. Upfront goes to the seller, and contingent is held. Payment works from a wallet or from an agent over **x402**.
-4. **Delivery.** `/api/key/:id` releases the key iff `canDecrypt(id, you)`, which is `purchased || block.timestamp >= exclusivityEnd`. The seller is offline and not in the path.
-5. **Resolution.** A bonded proposer checks the resolver, and anyone can dispute within the challenge window, with the owner as backstop.
-6. **Settlement.**
+1. **Commit.** The seller's agent salts each item, builds the Merkle root, encrypts the basket and seals the key to the key-release layer. On chain go `n`, `k`, `itemsRoot`, the teaser (the contract prepends "k of n"), payload hash, resolver, deadline, price split, bond, exclusivity window, stated P(hits ≥ k), and a Bloom filter of match terms and courts.
+2. **Preview.** The listing shows *expected by chance* (n × p0), *random-basket odds* (binomial P(X ≥ k | n, p0)) and *seller lift* (realized item hit rate / p0). The buyer intersects their watchlist with the Bloom filter locally.
+3. **Purchase.** Both tranches are escrowed, from a wallet or from an agent over **x402**.
+4. **Delivery.** `/api/key/:id` releases the key iff `canDecrypt(id, you)`. The buyer checks every item against `itemsRoot` in the browser.
+5. **Resolution.** A bonded proposer verifies the root and each docket citation, checks each item against justice.gov, and calls `propose(id, outcome, hitMask, evidence)`. TRUE needs popcount(hitMask) ≥ k and may land early; FALSE needs < k and waits for the deadline. Anyone can dispute; the owner backstop supplies a corrected mask.
+6. **Settlement.** The claim page shows the revealed basket (hits immediately, misses once exclusivity ends) with each leaf re-verified client-side.
 
 | Outcome | Contingent | Bond |
 |---|---|---|
-| True, public by deadline | → seller | returned |
-| True, not public | → public-goods pool | returned |
-| False | → refunded to buyer | 50% slashed (½ buyers, ½ pool) |
+| ≥ k hit, public by deadline | → seller | returned |
+| ≥ k hit, not public | → public-goods pool | returned |
+| < k hit | → refunded to buyer | 50% slashed (½ buyers, ½ pool) |
 | Fabricated | → refunded to buyer | 100% slashed (buyers made whole first, rest to pool) |
+
+**Replays.** `DOJ_FCA_REPLAY` baskets are built from backtested notices whose outcome is already history (each item's window is its notice date + 60 days). They settle in minutes and pay out normally, but the contract never writes them to the seller's record and the app excludes them from Brier and lift. They show settlement, not forecasting.
 
 ## Repo
 ```
-contracts/            Foundry — VerityMarket.sol, StandingBids.sol, tests for every settlement path
-app/                  Next.js 15 + wagmi/viem, b@b terminal theme
-  lib/                crypto, bloom, keyRelease (KeyReleaseProvider), resolvers, events, calibration, x402
+contracts/            Foundry — VerityMarket.sol (v2), StandingBids.sol, 27 tests incl. a TS→Solidity Merkle fixture
+research/             backtest-fca.py → fca-baseline.json (base rates) + fca-pairs.json (replay items)
+app/                  Next.js 15 + wagmi/viem
+  lib/                fca (DOJ_FCA resolver), merkle, odds, crypto, bloom, keyRelease, events, calibration, x402
   app/api/            feed · key/:id · payload · x402/claims[/:id/preview|/:id/buy]
-  scripts/            seller-fedreg (reference agent) · buyer-newsroom · oracle · fabricator · demo
+  scripts/            seller-fca (reference agent) · buyer-vendorrisk · oracle · fabricator · demo · gen-abi
 DESIGN.md             limitations, trust model, designed-not-built, roadmap
 ```
 
@@ -59,12 +72,16 @@ DESIGN.md             limitations, trust model, designed-not-built, roadmap
 # contracts
 cd contracts && forge test -vv
 
+# research (keyless, ~5 min): refresh the base rates the market quotes
+python3 research/backtest-fca.py && cp research/fca-baseline.json app/lib/
+
 # app
 cd app && npm install
 cp .env.example .env.local        # fill in addresses + keys
+npm test                           # resolver / merkle / odds on recorded fixtures
 npm run dev                        # http://localhost:3000
 
-# the demo: one command, from cold (slash first, then the happy path, then auto-release)
+# the demo, from cold: slash, then a replay basket settling on history, then a live basket left open
 VERITY_API=http://localhost:3000 npm run demo
 ```
 
