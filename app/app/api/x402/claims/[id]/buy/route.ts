@@ -16,7 +16,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (canBuy.status !== 0 || BigInt(Math.floor(Date.now() / 1000)) >= canBuy.exclusivityEnd)
     return Response.json({ error: "claim is not purchasable (settled, in resolution, or exclusivity expired — key is public)" }, { status: 409 });
 
-  const requirements = requirementsFor(new URL(req.url).toString(), price, `Verity sealed claim #${id}: upfront + contingent tranche (${usd(price)})`, r.account.address);
+  // currentPrice reads block.timestamp, and the load-balanced RPC can serve the paid retry from a node a few blocks
+  // behind the one that quoted the 402, so it sees a higher price than the buyer signed for and the facilitator rejects
+  // (invalid_exact_evm_payload_authorization_value). Quote the price as of 60s ago instead: it covers any such lag,
+  // only falls between the 402 and the retry, and always covers the price when purchaseFor executes. The sub-cent
+  // excess stays with the relayer.
+  const LAG = 60n;
+  const t = BigInt(Math.floor(Date.now() / 1000)) - LAG;
+  const span = canBuy.exclusivityEnd - canBuy.committedAt;
+  const el = t <= canBuy.committedAt ? 0n : t - canBuy.committedAt;
+  const lagged = canBuy.upfront - ((canBuy.upfront / 2n) * (el < span ? el : span)) / (span > 0n ? span : 1n) + canBuy.contingent;
+  const quote = lagged > price ? lagged : price;
+  const requirements = requirementsFor(new URL(req.url).toString(), quote, `Verity sealed claim #${id}: upfront + contingent tranche (${usd(quote)})`, r.account.address);
   const header = req.headers.get("x-payment");
   if (!header) return paymentRequired(requirements);
 
@@ -68,7 +79,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const body = {
     claimId: id.toString(),
     buyer: paid.payer,
-    paid: price.toString(),
+    paid: quote.toString(),
     paymentTx: txUrl(paid.tx),
     purchaseTx: txUrl(hash),
     status: receipt.status,

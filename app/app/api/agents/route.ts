@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       endpoints: [
         { method: "GET", path: "/api/x402/claims", query: "?status=OPEN", auth: "none", returns: "every listing with n, k, teaser, randomOdds, expected, sellerLift, bondMultiple, currentUpfront, contingent, bloomFilter, itemsRoot, payloadHash, payloadURI, and per-claim preview/buy/key URLs" },
         { method: "GET", path: "/api/x402/claims/{id}/preview", query: "?beat=a,b,c (optional; reveals your beat to this server, never to the seller)", auth: "none", returns: "bloomFilter, bloomParams, duplicateWarning; intersect locally when you can" },
-        { method: "GET", path: "/api/x402/claims/{id}/buy", auth: "x402", returns: "402 with `accepts` (exact scheme, USDC, base-sepolia, maxAmountRequired = currentPrice) until X-PAYMENT is supplied; then { claimId, buyer, paid, paymentTx, purchaseTx, next }" },
+        { method: "GET", path: "/api/x402/claims/{id}/buy", auth: "x402", returns: "402 with `accepts` (exact scheme, USDC, base-sepolia, maxAmountRequired = currentPrice as of 60s ago) until X-PAYMENT is supplied; then { claimId, buyer, paid, paymentTx, purchaseTx, next }" },
         { method: "POST", path: "/api/key/{id}", auth: "EIP-191 signature over the key-request message", body: "{ address, signature, issuedAt }", returns: "{ key, reason, provider } iff VerityMarket.canDecrypt(id, address); 403 otherwise" },
         { method: "GET", path: "/api/feed", query: "?limit=&claimId=", auth: "none", returns: "the event log, newest first" },
         { method: "GET", path: "/api/agents", auth: "none", returns: "this document" },
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       verifyLocally: [
         "keccak256(envelopeJson) == payloadHash from the Committed event",
         "Merkle root over the decrypted items (lib/merkle.ts, OpenZeppelin sorted pairs) == itemsRoot from the Committed event",
-        "the 402 maxAmountRequired equals VerityMarket.currentPrice(id) read from any RPC",
+        "the 402 maxAmountRequired is VerityMarket.currentPrice(id) as of 60s ago (at most 60s of decay above the live price), so RPC lag between quote and payment can't invalidate the signature",
         "after purchase, VerityMarket.purchased(id, you) reads true from any RPC",
         "after settlement, every revealed leaf verifies against itemsRoot via VerityMarket.verifyItem",
       ],

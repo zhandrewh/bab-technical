@@ -54,7 +54,10 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
         </label>
         <label className="grid gap-1">
           <span className="label">domain</span>
-          <input className={`${inputCls} w-36`} placeholder="fca:federal" value={domain} onChange={(e) => setDomain(e.target.value)} />
+          <select className={inputCls} value={domain} onChange={(e) => setDomain(e.target.value)}>
+            <option value="">any</option>
+            {[...new Set(claims.map((c) => c.domain))].sort().map((d) => <option key={d}>{d}</option>)}
+          </select>
         </label>
         <label className="grid gap-1">
           <span className="label">random odds ≤ %</span>

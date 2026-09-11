@@ -16,6 +16,7 @@
     "fund": "tsx scripts/fund.ts",
     "abi": "node scripts/gen-abi.mjs",
     "seller": "tsx scripts/seller-fca.ts",
+    "seed": "tsx scripts/seed-baskets.ts",
     "test": "tsx --test lib/*.test.ts"
   },
   "dependencies": {
