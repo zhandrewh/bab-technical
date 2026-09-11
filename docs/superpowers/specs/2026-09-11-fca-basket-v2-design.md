@@ -14,6 +14,8 @@ The target shape is "2 of our 14 emails will appear in the auditor's leak list w
 
 **Edge (measured, `research/backtest-fca.py`):** when the United States files a notice of election to intervene *for purposes of settlement* in a sealed FCA case, justice.gov publishes a settlement release naming that defendant within 60 days in **14%** of cases (n=110), vs **2%** for notices of election to *decline* (n=134). Median lead 14 days (range 1–57). DOJ announced *before* the notice in ~7% of cases. The 14% is a floor: title-only name matching misses USAO releases without "False Claims" in the headline. Real pairs: Lockheed Martin (notice 2025-01-27 → release 2025-02-06), Raytheon (2025-04-07 → 05-01), Aetna (2026-03-09 → 03-11), Exactech, Delta, Illumina, Honeywell (2026-08-18 → 09-01).
 
+> **Update (implementation, 2026-09-11):** the committed backtest uses a stricter shared stoplist (`app/lib/fca-stoplist.json`); the matcher behind the figures above counted generic caption words ("University", "Mortgage", "Michigan") as defendant names. Corrected: signal 9.6% at 30 d / 10.8% at 60 d (n=83); control 1.8% / 5.3% (n=114); median lead 14 d vs 41 d. The app reads these from `research/fca-baseline.json` and interpolates piecewise-linearly through the 30 d and 60 d points instead of scaling p60 linearly (§3).
+
 **Participants.** Sellers: docket-reading agents, relator-side paralegals. Buyers: compliance/vendor-risk teams, investors' diligence agents, investigative reporters. Resolver: the Department of Justice, indifferent to the contract.
 
 **Listing (public, on chain):**
