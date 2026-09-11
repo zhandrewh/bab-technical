@@ -61,22 +61,12 @@ export default async function AgentsPage() {
     <div className="space-y-12">
       <header className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-end">
         <div className="max-w-2xl space-y-3">
-          <h1 className="font-serif text-[40px] leading-none text-foreground sm:text-[52px]">Built for agents first</h1>
+          <h1 className="font-serif text-[40px] leading-none text-foreground sm:text-[52px]">Instructions</h1>
           <p className="text-[15px] leading-relaxed text-muted-foreground">
-            The website is a window onto an API. A program can discover every open basket, decide with the same numbers a person sees, pay in
-            one HTTP request, receive the key from the contract&apos;s own rule, and verify what it got, without a browser, a wallet popup, or a
-            human. The sellers and the oracle are programs too.
+            The website is wrapped around an API, where a program / agent can discover, purchase, recieve, and verify.
+
           </p>
         </div>
-        <Stats
-          big
-          cols="grid-cols-3 lg:grid-cols-1"
-          items={[
-            ["x402 purchases", String(x402.length)],
-            ["oracle actions", String(oracle.length)],
-            ["baskets sealed", `${commits.length}`],
-          ]}
-        />
       </header>
 
       <section className="space-y-4">

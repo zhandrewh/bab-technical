@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, usePublicClient, useSignMessage, useWriteContract } from "wagmi";
 import { marketAbi, erc20Abi } from "@/lib/abi";
 import { MARKET, USDC, usd } from "@/lib/chain";
@@ -25,8 +25,19 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
   const [beat, setBeat] = useState("defendant:lockheed, defendant:raytheon, defendant:aetna, defendant:siemens, court:dcd");
   const overlap = overlapCount(c.bloom, beat.split(",").map((s) => s.trim()).filter(Boolean));
   const rootOk = pkg ? pkg.items.length === c.n && commitBasket(pkg.items).root.toLowerCase() === c.itemsRoot.toLowerCase() : null;
-  const price = BigInt(c.currentUpfront) + BigInt(c.contingent);
-  const expired = c.exclusivityEnd <= Date.now() / 1000;
+  // Tick locally so the countdown, the decaying ask and the expired state move without a reload. Mirrors currentUpfront().
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now() / 1000), 500);
+    return () => clearInterval(id);
+  }, []);
+  const left = Math.max(0, Math.ceil(c.exclusivityEnd - now));
+  const expired = left === 0;
+  const up = BigInt(c.upfront);
+  const elapsed = BigInt(Math.max(0, Math.floor(now) - c.committedAt));
+  const span = BigInt(Math.max(1, c.exclusivityEnd - c.committedAt));
+  const liveUpfront = expired ? up / 2n : up - ((up / 2n) * (elapsed < span ? elapsed : span)) / span;
+  const price = liveUpfront + BigInt(c.contingent);
   const isSeller = address?.toLowerCase() === c.seller.toLowerCase();
 
   const run = async (fn: () => Promise<void>) => {
@@ -51,8 +62,10 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
       const buffer = price + price / 50n; // 2% headroom; decay only lowers the price
       const allowance = await pc!.readContract({ address: USDC, abi: erc20Abi, functionName: "allowance", args: [address!, MARKET] });
       if (allowance < buffer) {
-        setStep(`approve ${usd(buffer)} USDC in your wallet`);
-        await wait("approve", await writeContractAsync({ address: USDC, abi: erc20Abi, functionName: "approve", args: [MARKET, buffer] }));
+        // Approve a round $20 (testnet-scaled) so later purchases are a single click; short windows don't leave time for two.
+        const amount = buffer > 20_000_000n ? buffer : 20_000_000n;
+        setStep(`approve ${usd(amount)} USDC in your wallet`);
+        await wait("approve", await writeContractAsync({ address: USDC, abi: erc20Abi, functionName: "approve", args: [MARKET, amount] }));
       }
       setStep("confirm purchase in your wallet — both tranches go into escrow");
       await wait("purchase", await writeContractAsync({ address: MARKET, abi: marketAbi, functionName: "purchase", args: [BigInt(c.id)] }));
@@ -86,9 +99,12 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
       </Panel>
 
       <Panel tone="raised">
-        <Rule left="buy blind" right={usd(price)} />
+        <Rule left="buy blind" right={<span suppressHydrationWarning>{usd(price)}</span>} />
         <div className="mt-3 space-y-1 text-[13px]">
-          <div className="flex justify-between"><span className="text-gold-dim">upfront → seller now</span><span>{usd(BigInt(c.currentUpfront))}</span></div>
+          {c.status === "OPEN" && !expired && (
+            <div className="flex justify-between"><span className="text-gold-dim">buying closes in</span><span suppressHydrationWarning className="tabular-nums text-gold">{left < 3600 ? `${left}s` : `${Math.round(left / 3600)}h`}</span></div>
+          )}
+          <div className="flex justify-between"><span className="text-gold-dim">upfront → seller now</span><span suppressHydrationWarning className="tabular-nums">{usd(liveUpfront)}</span></div>
           <div className="flex justify-between"><span className="text-gold-dim">contingent → escrow</span><span>{usd(BigInt(c.contingent))}</span></div>
           <div className="flex justify-between"><span className="text-gold-dim">if false, you receive</span><span>{usd(BigInt(c.contingent))} + {usd(BigInt(c.bond) / 4n)}+ of bond</span></div>
         </div>

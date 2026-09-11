@@ -34,8 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3 sm:px-6">
               <Link href="/" className="flex items-baseline gap-2">
-                <span className="text-[15px] font-semibold text-gold">b@b</span>
-                <span className="font-serif text-[18px] text-foreground">verity</span>
+                <span className="text-[15px] font-semibold text-gold">verity</span>
               </Link>
               <nav className="flex flex-wrap gap-x-6 gap-y-1">
                 {NAV.map(([label, href]) => (

@@ -35,8 +35,7 @@ export default async function Home() {
           <div className="space-y-3">
             <h1 className="font-serif text-[30px] leading-none text-foreground">verity</h1>
             <p className="text-[13px] leading-relaxed text-foreground/85">
-              Buy sealed findings about government and contractor failures — before they’re public. Sellers put up a bond, so
-              <span className="text-gold"> wrong answers cost them, not you</span>.
+              Buy sealed findings about government and contractor failures.
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -74,9 +73,9 @@ export default async function Home() {
           <Rule left="how it works" right={<Link href="/how" className="hover:text-gold">Full walkthrough →</Link>} />
           <ol>
             {[
-              ["Pick a market", "Every finding shows who can prove it, the deadline, the seller's bond and their track record — before you pay."],
-              ["Buy it blind", "Pay the upfront price to unlock the evidence. The rest waits in escrow until the finding goes public."],
-              ["Get settled", "An independent institution resolves it. False claims slash the seller's bond and refund buyers."],
+              ["Pick a market", "Pick based on a seller's bond and past reccord."],
+              ["Buy it blind", "Pay the upfront and escrowed price to unlock it."],
+              ["Get settled", "An independent institution resolves it. Decisions are finalized here"],
             ].map(([h, b], i) => (
               <li key={h} className="grid grid-cols-[1.5rem_1fr] gap-2 border-t border-border py-4 first:border-t-0 first:pt-1">
                 <span className="text-[14px] font-medium tabular-nums text-gold-dim">{i + 1}</span>

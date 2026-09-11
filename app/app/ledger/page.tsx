@@ -52,10 +52,7 @@ export default async function LedgerPage() {
           }
         />
         <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
-          The whole market, read straight from the Base Sepolia event log. The trunk is the contract. Each claim branches off when a seller
-          commits, collects its purchases, publication, proposal and any dispute, and merges back when it settles. Nothing here comes from a
-          database: every node is a transaction you can open on Basescan, except the dashed ones, which are what the contract&apos;s own rules
-          make true when a clock runs out.
+          The market as read from the Base Sepolia event log
         </p>
       </div>
 

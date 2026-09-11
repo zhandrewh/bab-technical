@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "demo": "tsx scripts/demo.ts",
+    "demo:live": "tsx scripts/demo-live.ts",
     "buyer": "tsx scripts/buyer-vendorrisk.ts",
     "oracle": "tsx scripts/oracle.ts",
     "fabricator": "tsx scripts/fabricator.ts",

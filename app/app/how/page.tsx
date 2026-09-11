@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { HowFlow, type Step } from "@/components/how-flow";
 import { TxLink } from "@/components/ui";
 
@@ -24,7 +23,7 @@ const STEPS: Step[] = [
     ),
     example: (
       <>
-        "3 of 12 sealed cases will get a Justice Department announcement by October 11."
+        &ldquo;3 of 12 sealed cases will get a Justice Department announcement by October 11.&rdquo;
       </>
     ),
   },
@@ -77,7 +76,7 @@ const STEPS: Step[] = [
       
         </p>
         <p>
-          Over time, the claim's exclusivity window expires and findings become public.
+          Over time, the claim&apos;s exclusivity window expires and findings become public.
         </p>
       </>
     ),
@@ -102,7 +101,7 @@ const STEPS: Step[] = [
         </p>
       </>
     ),
-    example: <>The checker also verifies that every cited docket entry exists. Made up postings are classified as "fabrications" and carry more consequences</>,
+    example: <>The checker also verifies that every cited docket entry exists. Made up postings are classified as &ldquo;fabrications&rdquo; and carry more consequences</>,
   },
   {
     id: "settle",
@@ -135,7 +134,7 @@ const STEPS: Step[] = [
     body: (
       <>
         <p>
-          Everything writes to the seller's permanent record.
+          Everything writes to the seller&apos;s permanent record.
            </p>
         <p>This information is intended to be used by future buyers.</p>
       </>

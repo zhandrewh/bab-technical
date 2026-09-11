@@ -13,6 +13,7 @@ import { LiveFeed } from "@/components/feed";
 import { SettlementTable } from "@/components/settlement-table";
 import { KofN } from "@/components/market-cards";
 import { RevealedBasket } from "@/components/revealed-basket";
+import { AutoRefresh } from "@/components/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,8 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-8">
+      {/* Recent, unsettled claims poll so purchase → propose → settle shows up live. */}
+      <AutoRefresh active={c.status !== "SETTLED" && now - c.committedAt < 3600} />
       <div className="space-y-2">
         <Rule left={`basket #${c.id}`} right={<Tag tone={c.status === "SETTLED" ? outcomeTone(c.outcome) : "gold"}>{c.status === "SETTLED" ? `settled ${c.outcome}` : c.status}</Tag>} />
         <p className="text-[13px] text-muted-foreground">
