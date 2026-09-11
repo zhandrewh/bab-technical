@@ -83,14 +83,28 @@ export type CommittedArgs = {
   bloom: Hex;
 };
 
+/** Reuses the chunked indexer: a single getLogs from the deploy block breaks once the chain passes the RPC's
+ *  10,000-block range limit (about 5.5 hours on Base). */
 export async function getCommitted(claimId: bigint): Promise<(CommittedArgs & { tx: Hex; block: bigint }) | null> {
-  const logs = await publicClient.getContractEvents({
-    address: MARKET,
-    abi: marketAbi,
-    eventName: "Committed",
-    args: { claimId },
-    fromBlock: DEPLOY_BLOCK,
-  });
-  const l = logs[0];
-  return l ? { ...(l.args as CommittedArgs), tx: l.transactionHash, block: l.blockNumber } : null;
+  const e = (await getAllEvents()).find((x) => x.kind === "Committed" && x.claimId === claimId.toString());
+  if (!e) return null;
+  const a = e.args as Record<string, string | number>;
+  return {
+    claimId,
+    seller: a.seller as Address,
+    claimHash: a.claimHash as Hex,
+    payloadHash: a.payloadHash as Hex,
+    resolverId: a.resolverId as Hex,
+    domain: a.domain as Hex,
+    deadline: BigInt(a.deadline),
+    exclusivityEnd: BigInt(a.exclusivityEnd),
+    upfront: BigInt(a.upfront),
+    contingent: BigInt(a.contingent),
+    bond: BigInt(a.bond),
+    confidenceBps: Number(a.confidenceBps),
+    payloadURI: a.payloadURI as string,
+    bloom: a.bloom as Hex,
+    tx: e.tx,
+    block: BigInt(e.block),
+  };
 }

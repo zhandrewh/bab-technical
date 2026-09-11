@@ -15,11 +15,14 @@ const reputationAbi = parseAbi([
 ]);
 
 export async function agentIdOf(owner: Address): Promise<bigint | null> {
+  // The public RPC caps getLogs at 10,000 blocks; look back at most 9,000 from the head.
+  const head = await publicClient.getBlockNumber();
+  const floor = BigInt(process.env.ERC8004_FROM_BLOCK ?? process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? 0);
   const logs = await publicClient.getLogs({
     address: IDENTITY_REGISTRY,
     event: identityAbi[1],
     args: { owner },
-    fromBlock: BigInt(process.env.ERC8004_FROM_BLOCK ?? process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? 0),
+    fromBlock: head - 9_000n > floor ? head - 9_000n : floor,
   });
   return logs.length ? logs[logs.length - 1].args.agentId! : null;
 }
