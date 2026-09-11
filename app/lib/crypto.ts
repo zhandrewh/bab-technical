@@ -17,13 +17,13 @@ export type Envelope = {
   sealedKey: string;
 };
 
-const b64 = (u: Uint8Array) => Buffer.from(u).toString("base64");
-const unb64 = (s: string) => new Uint8Array(Buffer.from(s, "base64"));
+import { b64, unb64 } from "./b64";
+
 const subtle = globalThis.crypto.subtle;
 
 export async function encryptPackage(plaintext: string, custodianPubB64: string) {
-  const key = nacl.randomBytes(32);
-  const iv = nacl.randomBytes(12);
+  const key = new Uint8Array(nacl.randomBytes(32));
+  const iv = new Uint8Array(nacl.randomBytes(12));
   const k = await subtle.importKey("raw", key, "AES-GCM", false, ["encrypt"]);
   const ct = new Uint8Array(await subtle.encrypt({ name: "AES-GCM", iv }, k, new TextEncoder().encode(plaintext)));
   const eph = nacl.box.keyPair();

@@ -2,6 +2,7 @@
 // calldata as a data: URI. Either way the on-chain payloadHash binds the exact bytes, and the seller is offline
 // after commit — nothing in delivery depends on them.
 import type { Envelope } from "./crypto";
+import { utf8ToB64, b64ToUtf8 } from "./b64";
 
 const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
 
@@ -18,12 +19,12 @@ export async function storeEnvelope(envelopeJson: string): Promise<string> {
     if (res.ok) return `ipfs://${(await res.json()).IpfsHash}`;
     console.warn(`[storage] Pinata upload failed (${res.status}); falling back to calldata`);
   }
-  return `data:application/json;base64,${Buffer.from(envelopeJson).toString("base64")}`;
+  return `data:application/json;base64,${utf8ToB64(envelopeJson)}`;
 }
 
 /** Returns the exact envelope bytes so callers can re-check keccak256 against the on-chain payloadHash. */
 export async function fetchEnvelopeJson(uri: string): Promise<string> {
-  if (uri.startsWith("data:")) return Buffer.from(uri.split(",")[1], "base64").toString("utf8");
+  if (uri.startsWith("data:")) return b64ToUtf8(uri.split(",")[1]);
   if (uri.startsWith("ipfs://")) {
     const res = await fetch(IPFS_GATEWAY + uri.slice(7));
     if (!res.ok) throw new Error(`IPFS fetch failed: ${res.status}`);

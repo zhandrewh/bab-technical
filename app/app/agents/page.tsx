@@ -1,0 +1,71 @@
+import { Rule, Panel } from "@/components/ui";
+import { MARKET, BIDS, addrUrl } from "@/lib/chain";
+
+const Code = ({ children }: { children: string }) => (
+  <div className="overflow-hidden rounded-sm border border-border bg-[#0d0c0a]">
+    <div className="border-b border-border px-3 py-1 text-[10px] uppercase tracking-widest text-gold-dim">shell</div>
+    <pre className="bab-scroll overflow-x-auto p-3 text-[12px] leading-relaxed text-foreground/90">{children}</pre>
+  </div>
+);
+
+export default function AgentsPage() {
+  return (
+    <div className="space-y-8">
+      <Rule left="agent surface" right="x402 · no browser" />
+      <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
+        Everything in the UI is available over HTTP so an agent can list, preview and buy with no UI. Payment is x402: the endpoint answers
+        <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">402 Payment Required</code>
+        with the claim's current price; the agent signs a USDC authorization; the facilitator settles; the relayer calls
+        <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">purchaseFor(claimId, buyer)</code>
+        so both tranches land in escrow exactly as a wallet purchase would.
+      </p>
+
+      <section className="space-y-3">
+        <Rule left="endpoints" />
+        <Panel>
+          <ul className="space-y-2 text-[13px]">
+            <li><span className="text-gold">GET /api/x402/claims</span> — all listings with every pre-purchase signal and the Bloom filter</li>
+            <li><span className="text-gold">GET /api/x402/claims/:id/preview</span> — Bloom parameters, duplicate warnings; intersect locally</li>
+            <li><span className="text-gold">GET /api/x402/claims/:id/buy</span> — x402-gated purchase of both tranches</li>
+            <li><span className="text-gold">POST /api/key/:id</span> — signed key request; released iff <code className="text-gold-dim">canDecrypt(id, you)</code></li>
+            <li><span className="text-gold">GET /api/feed</span> — the event log the live feed renders</li>
+          </ul>
+        </Panel>
+      </section>
+
+      <section className="space-y-3">
+        <Rule left="buy from a script" />
+        <Code>{`import { wrapFetchWithPayment } from "x402-fetch";
+const pay = wrapFetchWithPayment(fetch, walletClient);        // viem wallet on base-sepolia
+const res = await pay("https://<host>/api/x402/claims/0/buy");  // 402 -> sign -> settle -> purchaseFor
+const { purchaseTx } = await res.json();
+
+const issuedAt = Math.floor(Date.now() / 1000);
+const signature = await walletClient.signMessage({ message: keyRequestMessage(0n, issuedAt) });
+const { key } = await (await fetch("https://<host>/api/key/0", {
+  method: "POST", body: JSON.stringify({ address, signature, issuedAt }) })).json();`}</Code>
+      </section>
+
+      <section className="space-y-3">
+        <Rule left="fork the seller agent" />
+        <Panel>
+          <p className="text-[13px] leading-relaxed text-foreground/85">
+            <code className="text-gold">app/scripts/seller-fedreg.ts</code> is the reference monitor: it watches Federal Register public inspection,
+            scores filings for accountability signals, assembles an evidence package, encrypts it, prices it, and commits — no human in the loop.
+            Replace <code className="text-gold-dim">fetchCandidates</code>, <code className="text-gold-dim">scoreCandidate</code> and
+            <code className="text-gold-dim"> buildPackage</code> to point it at county dockets, WARN notices, or SAM.gov.
+          </p>
+        </Panel>
+        <Code>{`cd app && npm run seller -- --max=3        # live public-inspection claims
+npm run buyer -- 0                         # newsroom agent: preview, x402 buy, decrypt
+npm run oracle                             # bonded proposer: resolve, propose, settle
+npm run demo                               # the whole thing, slash first`}</Code>
+      </section>
+
+      <section className="space-y-2 text-[12px] text-muted-foreground">
+        <div>VerityMarket <a className="text-gold-dim hover:text-gold" href={addrUrl(MARKET)} target="_blank" rel="noreferrer">{MARKET} ↗</a></div>
+        <div>StandingBids <a className="text-gold-dim hover:text-gold" href={addrUrl(BIDS)} target="_blank" rel="noreferrer">{BIDS} ↗</a></div>
+      </section>
+    </div>
+  );
+}

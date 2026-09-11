@@ -24,8 +24,8 @@ export type KeyReleaseResult =
   | { ok: true; key: string; reason: "purchased" | "exclusivity-expired" | "oracle" }
   | { ok: false; status: number; error: string };
 
-export const keyRequestMessage = (claimId: bigint, issuedAt: number) =>
-  `Verity key request\nchain:${chain.id}\nmarket:${MARKET.toLowerCase()}\nclaim:${claimId}\nissuedAt:${issuedAt}`;
+import { keyRequestMessage } from "./keyRelease.client";
+export { keyRequestMessage };
 
 export class CustodianKeyRelease implements KeyReleaseProvider {
   readonly name = "custodian-v1";
