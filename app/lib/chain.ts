@@ -8,7 +8,9 @@ export const EXPLORER = "https://sepolia.basescan.org";
 export const MARKET = (process.env.NEXT_PUBLIC_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000") as Address;
 export const BIDS = (process.env.NEXT_PUBLIC_BIDS_ADDRESS || "0x0000000000000000000000000000000000000000") as Address;
 export const USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as Address;
-export const DEPLOY_BLOCK = BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK || "0");
+// Guarded: a non-numeric value (e.g. a redacted placeholder from `vercel pull`) must not crash the build.
+const rawDeployBlock = (process.env.NEXT_PUBLIC_DEPLOY_BLOCK || "").trim().replace(/^"|"$/g, "");
+export const DEPLOY_BLOCK = /^\d+$/.test(rawDeployBlock) ? BigInt(rawDeployBlock) : 0n;
 export const REPUTATION_REGISTRY = "0x8004B663056A597Dffe9eCcC1965A193B7388713" as Address;
 export const IDENTITY_REGISTRY = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as Address;
 export const CUSTODIAN_PUBKEY = process.env.NEXT_PUBLIC_CUSTODIAN_PUBKEY || "";
