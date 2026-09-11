@@ -2,9 +2,9 @@ import { Rule, Panel } from "@/components/ui";
 import { MARKET, BIDS, addrUrl } from "@/lib/chain";
 
 const Code = ({ children }: { children: string }) => (
-  <div className="overflow-hidden rounded-2xl border border-border/70 bg-[#0d0c0a]/90">
-    <div className="flex items-center gap-1.5 border-b border-border/70 px-4 py-2">
-      <span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" />
+  <div className="glass overflow-hidden rounded-3xl">
+    <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-2.5">
+      <span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" /><span className="h-2.5 w-2.5 rounded-full bg-white/15" />
     </div>
     <pre className="bab-scroll overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-foreground/90">{children}</pre>
   </div>
@@ -16,9 +16,9 @@ export default function AgentsPage() {
       <Rule left="agent surface" right="x402 · no browser" />
       <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
         Everything in the UI is available over HTTP so an agent can list, preview and buy with no UI. Payment is x402: the endpoint answers
-        <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">402 Payment Required</code>
+        <code className="mx-1 rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12px] text-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">402 Payment Required</code>
         with the claim&apos;s current price; the agent signs a USDC authorization; the facilitator settles; the relayer calls
-        <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">purchaseFor(claimId, buyer)</code>
+        <code className="mx-1 rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12px] text-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">purchaseFor(claimId, buyer)</code>
         so both tranches land in escrow exactly as a wallet purchase would.
       </p>
 

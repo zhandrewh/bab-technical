@@ -1,78 +1,94 @@
 import Link from "next/link";
-import { getAllEvents, type FeedEvent } from "@/lib/events";
+import type { FeedEvent } from "@/lib/events";
+import { loadMarket, type ClaimView } from "@/lib/claims";
 import { LiveFeed } from "@/components/feed";
-import { Eyebrow, Rule, Panel, ErrorNote, btnBase, btnVariant } from "@/components/ui";
+import { FeaturedClaim, MarketCards } from "@/components/market-cards";
+import { Rule, Panel, ErrorNote, btnBase, btnVariant } from "@/components/ui";
 import { MARKET, usd, addrUrl } from "@/lib/chain";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   let events: FeedEvent[] = [];
+  let claims: ClaimView[] = [];
   let error = "";
   try {
-    events = (await getAllEvents()).slice(-200).reverse();
+    const m = await loadMarket();
+    claims = m.claims;
+    events = m.events.slice(-200).reverse();
   } catch (e) {
     error = (e as Error).message;
   }
-  const count = (k: string) => events.filter((e) => e.kind === k).length;
-  const slashed = events.filter((e) => e.kind === "Slashed").reduce((a, e) => a + BigInt(e.args.amount as string), 0n);
-  const escrowed = events.filter((e) => e.kind === "Purchased").reduce((a, e) => a + BigInt(e.args.contingentEscrowed as string), 0n);
+  const sum = (k: string, f: string) => events.filter((e) => e.kind === k).reduce((a, e) => a + BigInt(e.args[f] as string), 0n);
+  const openCount = claims.filter((c) => c.status === "OPEN").length;
+  const buyers = events.filter((e) => e.kind === "Purchased").length;
 
   return (
     <div className="space-y-12">
-      <section className="space-y-6 pt-10 text-center">
-        <Eyebrow>blockchain at berkeley</Eyebrow>
-        <h1 className="font-serif text-6xl leading-none tracking-tight text-foreground sm:text-7xl">verity</h1>
-        <p className="mx-auto max-w-2xl text-[14px] leading-relaxed text-foreground/85">
-          A market where people who spot government and contractor failures in public records get paid for being
-          <span className="text-gold"> early and right</span> — and paid in full only if the finding
-          <span className="text-gold"> reaches the public</span>.
-        </p>
-        <p className="mx-auto max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-          The Truth API sells a manufactured window: information that would be instantly public, withheld from non-payers.
-          Verity sells a discovered window: facts sitting unread in public records, sold on the condition that they become public.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link href="/market" className={`${btnBase} ${btnVariant.primary} px-5 py-2.5`}>
-            Browse sealed claims →
-          </Link>
-          <Link href="/commit" className={`${btnBase} ${btnVariant.idle} px-5 py-2.5`}>
-            Commit a finding
-          </Link>
+      {error && <ErrorNote>{error}</ErrorNote>}
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_19rem]">
+        <FeaturedClaim claims={claims} />
+        <aside className="flex flex-col gap-4">
+          <Panel tone="gold" className="space-y-3">
+            <h1 className="font-serif text-[30px] leading-none text-foreground">verity</h1>
+            <p className="text-[13px] leading-relaxed text-foreground/85">
+              Buy sealed findings about government and contractor failures — before they’re public. Sellers put up a bond, so
+              <span className="text-gold"> wrong answers cost them, not you</span>.
+            </p>
+            <div className="flex flex-col gap-2 pt-1">
+              <Link href="/market" className={`${btnBase} ${btnVariant.primary} py-2.5`}>
+                Browse {openCount || ""} open markets →
+              </Link>
+              <Link href="/commit" className={`${btnBase} ${btnVariant.idle} py-2.5`}>
+                Sell a finding
+              </Link>
+            </div>
+          </Panel>
+          <div className="grid flex-1 grid-cols-2 gap-3">
+            {[
+              ["Open markets", String(openCount), false],
+              ["Purchases", String(buyers), false],
+              ["In escrow", usd(sum("Purchased", "contingentEscrowed")), false],
+              ["Bonds slashed", usd(sum("Slashed", "amount")), sum("Slashed", "amount") > 0n],
+            ].map(([k, v, bad]) => (
+              <div key={k as string} className="glass flex flex-col justify-center rounded-2xl px-4 py-3">
+                <div className="text-[11px] text-muted-foreground">{k}</div>
+                <div className={`mt-0.5 text-[18px] font-semibold ${bad ? "text-danger" : "text-foreground"}`}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </section>
+
+      <section className="space-y-4">
+        <Rule left="markets" right={<Link href="/market" className="hover:text-gold">Advanced filters →</Link>} />
+        <MarketCards claims={claims} />
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-[1fr_22rem]">
+        <div className="space-y-4">
+          <Rule left="recent activity" right={<a href={addrUrl(MARKET)} target="_blank" rel="noreferrer" className="hover:text-gold">contract ↗</a>} />
+          <LiveFeed initial={events.slice(0, 12)} limit={12} compact />
         </div>
-      </section>
-
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          ["claims sealed", count("Committed")],
-          ["blind purchases", count("Purchased")],
-          ["contingent escrowed", usd(escrowed)],
-          ["bonds slashed", usd(slashed)],
-        ].map(([k, v]) => (
-          <Panel key={k as string} className="text-center">
-            <div className="label">{k}</div>
-            <div className={`mt-1 text-2xl font-semibold ${k === "bonds slashed" && slashed > 0n ? "text-danger" : "text-gold"}`}>{v}</div>
-          </Panel>
-        ))}
-      </section>
-
-      <section className="space-y-3">
-        <Rule left="live settlement feed" right={<a href={addrUrl(MARKET)} target="_blank" rel="noreferrer" className="hover:text-gold">market {MARKET.slice(0, 8)}… ↗</a>} />
-        {error && <ErrorNote>{error}</ErrorNote>}
-        <LiveFeed initial={events} />
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          ["1 · commit", "The seller encrypts the evidence and puts its hash, the claim hash, the resolver and a bond on chain. That record — this person knew this, then — is why Verity is on a chain."],
-          ["2 · buy blind", "The buyer sees resolver, deadline, bond, calibration and an overlap count. Both tranches go into escrow. The key releases on chain state; the seller is not in the path."],
-          ["3 · settle", "An institution indifferent to the contract resolves it. True and public pays the seller. True and suppressed pays the public-goods pool. False slashes the bond."],
-        ].map(([h, b]) => (
-          <Panel key={h}>
-            <div className="text-[15px] font-semibold text-gold first-letter:uppercase">{h}</div>
-            <p className="mt-2 text-[13px] leading-relaxed text-foreground/80">{b}</p>
-          </Panel>
-        ))}
+        <div className="space-y-4">
+          <Rule left="how it works" />
+          <ol className="space-y-3">
+            {[
+              ["Pick a market", "Every finding shows who can prove it, the deadline, the seller's bond and their track record — before you pay."],
+              ["Buy it blind", "Pay the upfront price to unlock the evidence. The rest waits in escrow until the finding goes public."],
+              ["Get settled", "An independent institution resolves it. False claims slash the seller's bond and refund buyers."],
+            ].map(([h, b], i) => (
+              <li key={h} className="glass flex gap-3 rounded-2xl p-4">
+                <span className="glass-gold grid size-7 shrink-0 place-items-center rounded-full text-[12px] font-semibold text-gold">{i + 1}</span>
+                <div>
+                  <div className="text-[14px] font-medium">{h}</div>
+                  <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{b}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
     </div>
   );

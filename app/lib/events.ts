@@ -2,6 +2,7 @@
 import { parseEventLogs, type Address, type Hex } from "viem";
 import { bidsAbi, marketAbi } from "./abi";
 import { BIDS, DEPLOY_BLOCK, MARKET, publicClient } from "./chain";
+import { BLOCK_MS, memoFor } from "./memo";
 
 const CHUNK = 9_000n;
 // The public RPC is load-balanced; a lagging node returns no logs for the newest blocks. Only cache ranges this far
@@ -27,18 +28,38 @@ const jsonable = (v: unknown): unknown =>
     ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, jsonable(x)]))
     : v;
 
-/** All market + bids events, oldest first. Incrementally cached per server instance. */
-export async function getAllEvents(): Promise<FeedEvent[]> {
+// Chunks fetched in parallel on a cold scan, bounded so the public RPC does not rate-limit us.
+const CONCURRENCY = 4;
+
+async function mapLimit<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+  return out;
+}
+
+/** All market + bids events, oldest first. Incrementally cached per server instance; concurrent and back-to-back
+ *  callers within one block share a single scan. */
+export const getAllEvents = memoFor(BLOCK_MS, scanEvents);
+
+async function scanEvents(): Promise<FeedEvent[]> {
   const latest = await publicClient.getBlock();
-  let from = cache ? cache.toBlock + 1n : DEPLOY_BLOCK;
+  const from = cache ? cache.toBlock + 1n : DEPLOY_BLOCK;
   const events = cache ? [...cache.events] : [];
   const safe = latest.number > FINALITY ? latest.number - FINALITY : 0n;
   let safeCount = events.length;
   const addresses = [MARKET, BIDS].filter((a) => !/^0x0+$/.test(a)) as Address[];
   if (!addresses.length) return [];
-  while (from <= latest.number) {
-    const to = from + CHUNK > latest.number ? latest.number : from + CHUNK;
-    const logs = await publicClient.getLogs({ address: addresses, fromBlock: from, toBlock: to });
+  const ranges: [bigint, bigint][] = [];
+  for (let f = from; f <= latest.number; f += CHUNK + 1n) ranges.push([f, f + CHUNK > latest.number ? latest.number : f + CHUNK]);
+  const chunks = await mapLimit(ranges, CONCURRENCY, ([fromBlock, toBlock]) => publicClient.getLogs({ address: addresses, fromBlock, toBlock }));
+  for (const logs of chunks) {
     const market = parseEventLogs({ abi: marketAbi, logs: logs.filter((l) => l.address.toLowerCase() === MARKET.toLowerCase()) });
     const bids = parseEventLogs({ abi: bidsAbi, logs: logs.filter((l) => l.address.toLowerCase() === BIDS.toLowerCase()) });
     for (const [contract, parsed] of [["market", market], ["bids", bids]] as const) {
@@ -57,7 +78,6 @@ export async function getAllEvents(): Promise<FeedEvent[]> {
         });
       }
     }
-    from = to + 1n;
   }
   events.sort((a, b) => Number(BigInt(a.block) - BigInt(b.block)) || a.logIndex - b.logIndex);
   safeCount = events.filter((e) => BigInt(e.block) <= safe).length;

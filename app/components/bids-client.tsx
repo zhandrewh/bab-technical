@@ -21,7 +21,7 @@ export type BidRow = {
   tx: string;
 };
 
-const input = "w-full rounded-lg border border-border bg-background/70 px-3 py-2 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
+const input = "glass-input w-full rounded-xl px-3 py-2 text-[13px] outline-none";
 
 export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: { id: string; seller: string; price: string; resolver: string }[] }) {
   const { address } = useAccount();
@@ -128,7 +128,7 @@ export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: {
           {address ? <Btn variant="primary" onClick={post} disabled={!!step}>escrow {usd(BigInt(Math.round(amount * 1e6)))} & post</Btn> : <p className="text-[12px] text-muted-foreground">Connect a wallet to post.</p>}
           {step && <p className="live text-[12px] text-gold-dim">{step}</p>}
           {lastTx && <p className="text-[12px]">confirmed <TxLink hash={lastTx} /></p>}
-          {err && <div className="rounded-xl border border-danger/40 bg-danger/5 px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
+          {err && <div className="glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
           <p className="text-[11px] text-muted-foreground">Brier eligibility is checked from the public event log at fill time in v1, not enforced in the contract.</p>
         </div>
       </Panel>

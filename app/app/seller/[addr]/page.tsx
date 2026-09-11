@@ -52,7 +52,7 @@ export default async function SellerPage({ params }: { params: Promise<{ addr: s
 
       <section className="space-y-3">
         <Rule left="prediction history" right={`${cal?.n ?? 0} settled · ${open.length} open`} />
-        <div className="bab-scroll overflow-x-auto rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
+        <div className="glass bab-scroll overflow-x-auto rounded-3xl">
           <table className="w-full min-w-[720px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left">

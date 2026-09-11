@@ -61,7 +61,7 @@ const ago = (ts: number) => {
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`;
 };
 
-export function LiveFeed({ initial, limit = 60, filter }: { initial: FeedEvent[]; limit?: number; filter?: (e: FeedEvent) => boolean }) {
+export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: FeedEvent[]; limit?: number; claimId?: string; compact?: boolean }) {
   const [events, setEvents] = useState(initial);
   const [status, setStatus] = useState("listening for new blocks");
   const seen = useRef(new Set(initial.map((e) => `${e.tx}:${e.logIndex}`)));
@@ -69,10 +69,12 @@ export function LiveFeed({ initial, limit = 60, filter }: { initial: FeedEvent[]
 
   useEffect(() => {
     let alive = true;
+    const url = `/api/feed?limit=${limit}${claimId ? `&claimId=${claimId}` : ""}`;
     const tick = async () => {
+      if (document.hidden) return; // no polling from background tabs; catch up on return
       try {
         setStatus("polling base sepolia event log");
-        const r = await fetch("/api/feed", { cache: "no-store" });
+        const r = await fetch(url, { cache: "no-store" });
         const j = (await r.json()) as { events: FeedEvent[] };
         if (!alive) return;
         const nu = new Set<string>();
@@ -83,35 +85,46 @@ export function LiveFeed({ initial, limit = 60, filter }: { initial: FeedEvent[]
             nu.add(k);
           }
         }
-        setFresh(nu);
-        setEvents(j.events);
+        if (nu.size) setFresh(nu);
+        setEvents((prev) => (nu.size || prev.length !== j.events.length ? j.events : prev));
         setStatus(`listening · last poll ${new Date().toLocaleTimeString()}`);
       } catch {
         setStatus("rpc unreachable — retrying in 6s");
       }
     };
+    const onVisible = () => !document.hidden && tick();
     const id = setInterval(tick, 6000);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [limit, claimId]);
 
-  const rows = (filter ? events.filter(filter) : events).slice(0, limit);
+  const rows = events.slice(0, limit);
   return (
     <div>
       <div className="mb-2 text-[12px] text-muted-foreground">
         <span className="live first-letter:uppercase">{status}</span>
       </div>
       {rows.length === 0 && <div className="py-6 text-[13px] text-muted-foreground">No transactions yet. The first commit will appear here within one block.</div>}
-      <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
+      <ul className="glass divide-y divide-white/[0.06] overflow-hidden rounded-3xl">
         {rows.map((e) => {
           const d = describe(e);
           const k = `${e.tx}:${e.logIndex}`;
+          if (compact)
+            return (
+              <li key={k} className={`grid grid-cols-[5.5rem_1fr_auto] items-center gap-3 px-4 py-3 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
+                <span className={`w-fit rounded-full bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
+                <span className="min-w-0 truncate text-foreground/90">{d.text}</span>
+                <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>{ago(e.ts)} ago</span>
+              </li>
+            );
           return (
             <li key={k} className={`grid grid-cols-[3rem_5.5rem_1fr_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
               <span className="text-[12px] text-muted-foreground">{ago(e.ts)}</span>
-              <span className={`w-fit rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
+              <span className={`w-fit rounded-full bg-white/[0.07] px-2 py-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
               <span className="min-w-0 text-foreground/90">{d.text}</span>
               <span className="text-[11px]">
                 <TxLink hash={e.tx} />

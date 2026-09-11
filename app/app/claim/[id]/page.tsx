@@ -65,7 +65,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
 
           <div className="space-y-3">
             <Rule left="history" right="from the event log" />
-            <LiveFeed initial={[...events].reverse()} filter={(e) => e.claimId === c.id} />
+            <LiveFeed initial={[...events].reverse()} claimId={c.id} />
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import { MARKET, OUTCOMES, STATUSES, publicClient } from "./chain";
 import { getAllEvents, type FeedEvent } from "./events";
 import { calibrationFrom } from "./calibration";
 import { bloomSimilarity } from "./bloom";
+import { BLOCK_MS, memoFor } from "./memo";
 
 export type ClaimView = {
   id: string;
@@ -39,7 +40,10 @@ export type ClaimView = {
 
 const s32 = (h: Hex) => hexToString(h, { size: 32 }).replace(/\0/g, "");
 
-export async function loadMarket(): Promise<{ claims: ClaimView[]; events: FeedEvent[] }> {
+/** Shared across callers within one block (e.g. the claim page loads the market, then the event log). */
+export const loadMarket = memoFor(BLOCK_MS, buildMarket);
+
+async function buildMarket(): Promise<{ claims: ClaimView[]; events: FeedEvent[] }> {
   const events = await getAllEvents();
   const commits = events.filter((e) => e.kind === "Committed");
   if (!commits.length) return { claims: [], events };

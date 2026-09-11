@@ -5,7 +5,7 @@ import type { ClaimView } from "@/lib/claims";
 import { usd } from "@/lib/chain";
 import { Tag, brierText, outcomeTone } from "./ui";
 
-const inputCls = "rounded-lg border border-border bg-background/70 px-3 py-1.5 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
+const inputCls = "glass-input rounded-xl px-3 py-1.5 text-[13px] outline-none";
 const until = (ts: number) => {
   const s = ts - Date.now() / 1000;
   if (s <= 0) return "passed";
@@ -63,7 +63,7 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
         </label>
       </div>
 
-      <div className="bab-scroll overflow-x-auto rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
+      <div className="glass bab-scroll overflow-x-auto rounded-3xl">
         <table className="w-full min-w-[900px] text-[13px]">
           <thead>
             <tr className="border-b border-border text-left">
@@ -79,7 +79,7 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
               </tr>
             )}
             {rows.map((c) => (
-              <tr key={c.id} className="transition-colors hover:bg-accent/60">
+              <tr key={c.id} className="transition-colors hover:bg-white/[0.04]">
                 <td className="px-3 py-2">
                   <Link href={`/claim/${c.id}`} className="text-gold hover:underline">#{c.id} sealed</Link>
                   <div className="text-[11px] text-muted-foreground">{c.claimHash.slice(0, 10)}…</div>

@@ -15,17 +15,17 @@ export function Rule({ left, right, tone = "gold" }: { left: React.ReactNode; ri
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-gold-faint bg-gold/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gold">
+    <div className="glass-gold inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gold">
       {children}
     </div>
   );
 }
 
-export const btnBase = "inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40";
+export const btnBase = "glass-press inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium disabled:pointer-events-none disabled:opacity-40";
 export const btnVariant = {
-  primary: "bg-gold text-background hover:bg-gold/85",
-  danger: "border border-danger/50 text-danger hover:bg-danger hover:text-background",
-  idle: "border border-border bg-surface/60 text-foreground/85 hover:border-gold-dim hover:text-gold",
+  primary: "glass-solid text-background",
+  danger: "glass-danger text-danger",
+  idle: "glass text-foreground/90 hover:text-gold",
 } as const;
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof btnVariant };
@@ -68,18 +68,18 @@ export function Field({ k, v, hint }: { k: React.ReactNode; v: React.ReactNode; 
 }
 
 export function Panel({ children, className = "", tone }: { children: React.ReactNode; className?: string; tone?: "danger" | "gold" }) {
-  const t = tone === "danger" ? "border-danger/40 bg-danger/5" : tone === "gold" ? "border-gold-faint bg-gradient-to-b from-gold/[0.06] to-surface/80" : "border-border/70 bg-surface/75";
-  return <div className={`rounded-2xl border p-5 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md ${t} ${className}`}>{children}</div>;
+  const t = tone === "danger" ? "glass-danger" : tone === "gold" ? "glass-gold" : "glass";
+  return <div className={`rounded-3xl p-5 ${t} ${className}`}>{children}</div>;
 }
 
 export function Tag({ children, tone = "dim" }: { children: React.ReactNode; tone?: "dim" | "gold" | "danger" }) {
-  const t = tone === "gold" ? "bg-gold/10 text-gold ring-gold-dim/50" : tone === "danger" ? "bg-danger/10 text-danger ring-danger/40" : "bg-secondary text-muted-foreground ring-border";
-  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ring-1 ring-inset ${t}`}>{children}</span>;
+  const t = tone === "gold" ? "glass-gold text-gold" : tone === "danger" ? "glass-danger text-danger" : "glass text-muted-foreground";
+  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${t}`}>{children}</span>;
 }
 
 export function ErrorNote({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-danger/40 bg-danger/5 px-3 py-2 text-[13px]">
+    <div className="glass-danger rounded-2xl px-4 py-2.5 text-[13px]">
       <span className="font-medium text-danger">Error: </span>
       {children}
     </div>
@@ -90,7 +90,7 @@ export function Pending({ children }: { children: React.ReactNode }) {
   return <p className="live text-[12px] text-gold-dim">{children}</p>;
 }
 
-export const inputCls = "w-full rounded-lg border border-border bg-background/70 px-3 py-2 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
+export const inputCls = "glass-input w-full rounded-xl px-3 py-2 text-[13px] outline-none";
 
 export const brierText = (b: number | null) => (b == null ? "—" : b.toFixed(3));
 

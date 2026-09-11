@@ -76,7 +76,7 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
       <Panel>
         <Rule left="relevance preview" right="local only" />
         <p className="mt-2 text-[12px] text-muted-foreground">Your beat never leaves this browser. You see a count, not which entities matched.</p>
-        <textarea className="mt-2 h-20 w-full resize-none rounded-lg border border-border bg-background/70 p-3 text-[12px] outline-none focus:border-gold-dim" value={beat} onChange={(e) => setBeat(e.target.value)} />
+        <textarea className="mt-2 h-20 glass-input w-full resize-none rounded-xl p-3 text-[12px] outline-none" value={beat} onChange={(e) => setBeat(e.target.value)} />
         <div className="mt-2 text-[13px]">
           touches <span className="text-gold">{overlap}</span> of {beat.split(",").filter((s) => s.trim()).length} entities on your beat
         </div>
@@ -107,7 +107,7 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
         {expired && !pkg && <p className="mt-2 text-[12px] text-gold">Exclusivity expired: anyone can request the key now. No purchase needed.</p>}
         {step && <p className="live mt-3 text-[12px] text-gold-dim">{step}</p>}
         {txs.map(([l, h]) => <div key={h} className="mt-1 text-[12px]">{l} ✓ <TxLink hash={h} /></div>)}
-        {err && <div className="mt-3 rounded-xl border border-danger/40 bg-danger/5 px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
+        {err && <div className="mt-3 glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
       </Panel>
 
       {pkg && (
