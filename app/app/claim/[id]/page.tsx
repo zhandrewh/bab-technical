@@ -75,7 +75,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
                 ]}
               />
             </div>
-            <p className="mt-4text-[12px] leading-relaxed text-muted-foreground">
+            <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">
               A random sealed FCA notice (a declined case) drew a DOJ release within this {Math.round(days)}-day window at {(c.p0 * 100).toFixed(1)}% per item in
               the backtest, so {c.n} random cases make this claim {fmtOdds(c.randomOdds)} of the time. Settlement-intervention notices ran at{" "}
               {(signalRate(days) * 100).toFixed(1)}%, which puts this claim at {fmtOdds(signalOdds)}. The seller states {Math.round(c.confidence * 100)}%.
