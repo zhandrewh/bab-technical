@@ -5,11 +5,12 @@ import { USDC } from "../lib/chain";
 import { erc20Abi } from "../lib/abi";
 
 const PLAN: Record<Exclude<Role, "DEPLOYER">, { eth: string; usdc: bigint }> = {
-  SELLER: { eth: "0.004", usdc: 5_000_000n },
-  FABRICATOR: { eth: "0.003", usdc: 3_000_000n },
-  BUYER: { eth: "0.003", usdc: 5_000_000n },
-  ORACLE: { eth: "0.006", usdc: 2_000_000n },
-  RELAYER: { eth: "0.003", usdc: 2_000_000n },
+  // Base Sepolia gas is ~0.006 gwei: 0.00001 ETH buys ~1.6M gas. Sized for one faucet claim (0.0001 ETH).
+  SELLER: { eth: process.env.FUND_ETH_SELLER ?? "0.000015", usdc: 5_000_000n },
+  FABRICATOR: { eth: process.env.FUND_ETH_FABRICATOR ?? "0.000008", usdc: 3_000_000n },
+  BUYER: { eth: process.env.FUND_ETH_BUYER ?? "0.000006", usdc: 5_000_000n },
+  ORACLE: { eth: process.env.FUND_ETH_ORACLE ?? "0.00002", usdc: 2_000_000n },
+  RELAYER: { eth: process.env.FUND_ETH_RELAYER ?? "0.00001", usdc: 2_000_000n },
 };
 
 (async () => {

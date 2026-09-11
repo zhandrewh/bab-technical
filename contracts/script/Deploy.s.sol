@@ -12,7 +12,7 @@ contract Deploy is Script {
 
     function run() external {
         address oracle = vm.envAddress("ORACLE_ADDR");
-        address pool = vm.envOr("POOL_ADDR", address(0x000000000000000000000000000000000000900d));
+        address pool = vm.envOr("POOL_ADDR", address(0x000000000000000000000000000000000000900D));
         uint64 window = uint64(vm.envOr("CHALLENGE_WINDOW", uint256(120)));
         uint128 pbond = uint128(vm.envOr("PROPOSER_BOND", uint256(500_000)));
 

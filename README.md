@@ -9,8 +9,8 @@ Verity is the inverse of the Truth API. The Truth API sells a *manufactured* win
 
 | Contract | Address |
 |---|---|
-| VerityMarket | _pending deploy_ |
-| StandingBids | _pending deploy_ |
+| VerityMarket (verified) | [`0xBe235B1169184272808745c1f2916892Bb0bf9da`](https://sepolia.basescan.org/address/0xBe235B1169184272808745c1f2916892Bb0bf9da#code) |
+| StandingBids (verified) | [`0x473055227638f317A96AaE76C728a89c1554321D`](https://sepolia.basescan.org/address/0x473055227638f317A96AaE76C728a89c1554321D#code) |
 | ERC-8004 Identity Registry | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
 | ERC-8004 Reputation Registry | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
