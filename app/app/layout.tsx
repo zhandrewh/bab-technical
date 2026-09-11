@@ -20,9 +20,11 @@ export const metadata: Metadata = {
 const NAV = [
   ["feed", "/"],
   ["market", "/market"],
+  ["how it works", "/how"],
+  ["ledger", "/ledger"],
+  ["agents", "/agents"],
   ["commit", "/commit"],
   ["bids", "/bids"],
-  ["agents", "/agents"],
 ] as const;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

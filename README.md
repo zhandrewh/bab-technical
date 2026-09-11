@@ -62,7 +62,8 @@ contracts/            Foundry — VerityMarket.sol (v2), StandingBids.sol, 27 te
 research/             backtest-fca.py → fca-baseline.json (base rates) + fca-pairs.json (replay items)
 app/                  Next.js 15 + wagmi/viem
   lib/                fca (DOJ_FCA resolver), merkle, odds, crypto, bloom, keyRelease, events, calibration, x402
-  app/api/            feed · key/:id · payload · x402/claims[/:id/preview|/:id/buy]
+  app/api/            feed · key/:id · payload · x402/claims[/:id/preview|/:id/buy] · agents (manifest, also /.well-known/agent.json) · llms.txt
+  app/                / feed · /market · /how (walkthrough with a scroll-driven flowchart) · /ledger (every tx as a git-style graph, four reviewer lenses) · /agents · /commit · /bids
   scripts/            seller-fca (reference agent) · buyer-vendorrisk · oracle · fabricator · demo · gen-abi
 DESIGN.md             limitations, trust model, designed-not-built, roadmap
 ```

@@ -72,7 +72,7 @@ export default async function Home() {
           <LiveFeed initial={events.slice(0, 12)} limit={12} compact />
         </div>
         <div className="space-y-4">
-          <Rule left="how it works" />
+          <Rule left="how it works" right={<Link href="/how" className="hover:text-gold">Full walkthrough →</Link>} />
           <ol className="space-y-3">
             {[
               ["Pick a market", "Every finding shows who can prove it, the deadline, the seller's bond and their track record — before you pay."],
