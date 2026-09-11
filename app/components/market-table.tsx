@@ -5,7 +5,7 @@ import type { ClaimView } from "@/lib/claims";
 import { usd } from "@/lib/chain";
 import { Tag, brierText, outcomeTone } from "./ui";
 
-const inputCls = "border border-border bg-background px-2 py-1 text-[12px] outline-none focus:border-gold-dim";
+const inputCls = "rounded-lg border border-border bg-background/70 px-3 py-1.5 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
 const until = (ts: number) => {
   const s = ts - Date.now() / 1000;
   if (s <= 0) return "passed";
@@ -63,12 +63,12 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
         </label>
       </div>
 
-      <div className="bab-scroll overflow-x-auto rounded-sm border border-border bg-surface/80 backdrop-blur-sm">
+      <div className="bab-scroll overflow-x-auto rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
         <table className="w-full min-w-[900px] text-[13px]">
           <thead>
             <tr className="border-b border-border text-left">
               {["claim", "resolver", "deadline", "domain", "upfront / contingent", "bond", "seller brier", "decayed ask", "novelty", "status"].map((h) => (
-                <th key={h} className="px-3 py-2 text-[10px] font-normal uppercase tracking-widest text-gold-dim">{h}</th>
+                <th key={h} className="px-3 py-3 text-[12px] font-medium text-muted-foreground first-letter:uppercase">{h}</th>
               ))}
             </tr>
           </thead>
@@ -89,7 +89,7 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
                 <td className="px-3 py-2 text-gold-dim">{c.domain}</td>
                 <td className="px-3 py-2">
                   {usd(BigInt(c.upfront))} / {usd(BigInt(c.contingent))}
-                  <div className="mt-1 h-1 w-24 bg-border"><div className="h-1 bg-gold-dim" style={{ width: `${c.upfrontShare * 100}%` }} /></div>
+                  <div className="mt-1 h-1 w-24 overflow-hidden rounded-full bg-border"><div className="h-1 rounded-full bg-gold-dim" style={{ width: `${c.upfrontShare * 100}%` }} /></div>
                   <div className="text-[11px] text-muted-foreground">{Math.round(c.upfrontShare * 100)}% upfront</div>
                 </td>
                 <td className="px-3 py-2">

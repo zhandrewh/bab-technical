@@ -7,27 +7,28 @@ export function WalletButton() {
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
-  const cls = "border px-2 py-1 text-[10px] uppercase tracking-widest transition-colors";
+  const cls = "rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors";
 
   if (!isConnected)
     return (
       <button
-        className={`${cls} border-border text-gold-dim hover:border-gold hover:text-gold`}
+        className={`${cls} bg-gold text-background hover:bg-gold/85`}
         onClick={() => connectors[0] && connect({ connector: connectors[0], chainId: baseSepolia.id })}
         disabled={isPending}
       >
-        {isPending ? "[ waiting for wallet… ]" : "[ connect ]"}
+        {isPending ? "Waiting for wallet…" : "Connect wallet"}
       </button>
     );
   if (chainId !== baseSepolia.id)
     return (
-      <button className={`${cls} border-danger/50 text-danger hover:bg-danger hover:text-background`} onClick={() => switchChain({ chainId: baseSepolia.id })}>
-        [ switch to base sepolia ]
+      <button className={`${cls} border border-danger/50 text-danger hover:bg-danger hover:text-background`} onClick={() => switchChain({ chainId: baseSepolia.id })}>
+        Switch to Base Sepolia
       </button>
     );
   return (
-    <button className={`${cls} border-gold-dim text-gold hover:border-gold`} onClick={() => disconnect()} title="disconnect">
-      [ {address!.slice(0, 6)}…{address!.slice(-4)} ]
+    <button className={`${cls} flex items-center gap-2 border border-gold-faint bg-gold/5 text-gold hover:border-gold-dim`} onClick={() => disconnect()} title="disconnect">
+      <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+      {address!.slice(0, 6)}…{address!.slice(-4)}
     </button>
   );
 }

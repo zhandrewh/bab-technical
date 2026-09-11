@@ -32,7 +32,7 @@ export function SettlementTable({ e, slashed }: { e: FeedEvent; slashed?: FeedEv
           ))}
         </tbody>
       </table>
-      {slashed && <div className="mt-3 text-[11px] uppercase tracking-widest text-danger">[slash] bond burned on chain · <TxLink hash={slashed.tx} /></div>}
+      {slashed && <div className="mt-3 text-[12px] font-medium text-danger">Bond burned on chain · <TxLink hash={slashed.tx} /></div>}
     </Panel>
   );
 }

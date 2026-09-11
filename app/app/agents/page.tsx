@@ -2,9 +2,11 @@ import { Rule, Panel } from "@/components/ui";
 import { MARKET, BIDS, addrUrl } from "@/lib/chain";
 
 const Code = ({ children }: { children: string }) => (
-  <div className="overflow-hidden rounded-sm border border-border bg-[#0d0c0a]">
-    <div className="border-b border-border px-3 py-1 text-[10px] uppercase tracking-widest text-gold-dim">shell</div>
-    <pre className="bab-scroll overflow-x-auto p-3 text-[12px] leading-relaxed text-foreground/90">{children}</pre>
+  <div className="overflow-hidden rounded-2xl border border-border/70 bg-[#0d0c0a]/90">
+    <div className="flex items-center gap-1.5 border-b border-border/70 px-4 py-2">
+      <span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" /><span className="h-2.5 w-2.5 rounded-full bg-border" />
+    </div>
+    <pre className="bab-scroll overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-foreground/90">{children}</pre>
   </div>
 );
 

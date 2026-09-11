@@ -29,7 +29,7 @@ export default async function SellerPage({ params }: { params: Promise<{ addr: s
         ].map(([k, v]) => (
           <Panel key={k} className="text-center">
             <div className="label">{k}</div>
-            <div className={`mt-1 text-lg ${k === "bonds slashed" && (rec?.bondsSlashed ?? 0n) > 0n ? "text-danger" : "text-gold"}`}>{v}</div>
+            <div className={`mt-1 text-xl font-semibold ${k === "bonds slashed" && (rec?.bondsSlashed ?? 0n) > 0n ? "text-danger" : "text-gold"}`}>{v}</div>
           </Panel>
         ))}
       </div>
@@ -52,11 +52,11 @@ export default async function SellerPage({ params }: { params: Promise<{ addr: s
 
       <section className="space-y-3">
         <Rule left="prediction history" right={`${cal?.n ?? 0} settled · ${open.length} open`} />
-        <div className="bab-scroll overflow-x-auto rounded-sm border border-border bg-surface/80">
+        <div className="bab-scroll overflow-x-auto rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
           <table className="w-full min-w-[720px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left">
-                {["claim", "domain", "predicted", "actual", "(p−o)²", "bond", "slashed", "settled", "tx"].map((h) => <th key={h} className="px-3 py-2 text-[10px] font-normal uppercase tracking-widest text-gold-dim">{h}</th>)}
+                {["claim", "domain", "predicted", "actual", "(p−o)²", "bond", "slashed", "settled", "tx"].map((h) => <th key={h} className="px-3 py-3 text-[12px] font-medium text-muted-foreground first-letter:uppercase">{h}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">

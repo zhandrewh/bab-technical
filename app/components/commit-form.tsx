@@ -10,7 +10,7 @@ import type { EvidencePackage, ResolverId } from "@/lib/package";
 import { Btn, Panel, Rule, TxLink } from "./ui";
 import Link from "next/link";
 
-const input = "w-full border border-border bg-background px-2 py-1.5 text-[13px] outline-none focus:border-gold-dim";
+const input = "w-full rounded-lg border border-border bg-background/70 px-3 py-2 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
 const RES: Record<ResolverId, { label: string; query: string; hint: string }> = {
   FEDREG: { label: "Federal Register", query: "FR document number, e.g. 2026-18583", hint: "Resolves TRUE when the document is published by the deadline. No key needed." },
   SAM: { label: "SAM.gov exclusions", query: "Contractor UEI", hint: "Resolves TRUE on an active exclusion/debarment record." },
@@ -116,7 +116,7 @@ export function CommitForm() {
       <Panel tone="gold">
         <Rule left={`claim #${done.id} committed`} right={<TxLink hash={done.tx} />} />
         <p className="mt-3 text-[13px]">The record is permanent: you knew this, now. Your package opens to everyone on {new Date(exclEnd).toUTCString()}.</p>
-        <Link href={`/claim/${done.id}`} className="mt-3 inline-block text-[11px] uppercase tracking-widest text-gold hover:underline">[ view listing ]</Link>
+        <Link href={`/claim/${done.id}`} className="mt-3 inline-block text-[13px] font-medium text-gold hover:underline">View listing →</Link>
       </Panel>
     );
 
@@ -133,7 +133,7 @@ export function CommitForm() {
           <Rule left="2 · resolver" right="whitelist" />
           <div className="mt-3 flex flex-wrap gap-2">
             {(Object.keys(RES) as ResolverId[]).map((r) => (
-              <button key={r} onClick={() => setResolver(r)} className={`border px-2 py-1 text-[11px] uppercase tracking-widest transition-colors ${resolver === r ? "border-gold text-gold" : "border-border text-gold-dim hover:text-gold"}`}>
+              <button key={r} onClick={() => setResolver(r)} className={`rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${resolver === r ? "border-gold text-gold" : "border-border text-gold-dim hover:text-gold"}`}>
                 {RES[r].label}
               </button>
             ))}
@@ -152,7 +152,7 @@ export function CommitForm() {
           <input
             type="file"
             multiple
-            className="mt-2 text-[12px] text-gold-dim file:mr-3 file:border file:border-border file:bg-background file:px-2 file:py-1 file:text-[11px] file:uppercase file:tracking-widest file:text-gold-dim"
+            className="mt-2 text-[12px] text-gold-dim file:mr-3 file:rounded-full file:border file:border-border file:bg-secondary file:px-3 file:py-1 file:text-[12px] file:text-gold-dim"
             onChange={async (e) => {
               const out: { name: string; b64: string }[] = [];
               for (const f of Array.from(e.target.files ?? [])) {
@@ -225,8 +225,8 @@ export function CommitForm() {
           <div className="mt-4">
             {address ? <Btn variant="primary" onClick={submit} disabled={!!step}>seal & commit · bond {usd(bond)}</Btn> : <span className="text-[12px] text-muted-foreground">Connect a wallet to commit.</span>}
           </div>
-          {step && <p className="caret mt-3 text-[11px] uppercase tracking-widest text-gold-dim">{step}</p>}
-          {err && <div className="mt-3 rounded-sm border border-danger/50 bg-danger/5 p-2 text-[12px]"><span className="text-danger">[error]</span> {err}</div>}
+          {step && <p className="live mt-3 text-[12px] text-gold-dim">{step}</p>}
+          {err && <div className="mt-3 rounded-xl border border-danger/40 bg-danger/5 px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
         </Panel>
       </div>
     </div>

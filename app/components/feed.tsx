@@ -100,18 +100,18 @@ export function LiveFeed({ initial, limit = 60, filter }: { initial: FeedEvent[]
   const rows = (filter ? events.filter(filter) : events).slice(0, limit);
   return (
     <div>
-      <div className="mb-2 text-[10px] uppercase tracking-widest text-gold-dim/70">
-        <span className="caret">{status}</span>
+      <div className="mb-2 text-[12px] text-muted-foreground">
+        <span className="live first-letter:uppercase">{status}</span>
       </div>
       {rows.length === 0 && <div className="py-6 text-[13px] text-muted-foreground">No transactions yet. The first commit will appear here within one block.</div>}
-      <ul className="divide-y divide-border/40">
+      <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-surface/75 backdrop-blur-md">
         {rows.map((e) => {
           const d = describe(e);
           const k = `${e.tx}:${e.logIndex}`;
           return (
-            <li key={k} className={`grid grid-cols-[3.2rem_5.5rem_1fr_auto] items-baseline gap-3 py-2 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
-              <span className="text-[11px] text-muted-foreground">{ago(e.ts)}</span>
-              <span className={`text-[10px] uppercase tracking-widest ${d.tone}`}>[{d.tag}]</span>
+            <li key={k} className={`grid grid-cols-[3rem_5.5rem_1fr_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
+              <span className="text-[12px] text-muted-foreground">{ago(e.ts)}</span>
+              <span className={`w-fit rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
               <span className="min-w-0 text-foreground/90">{d.text}</span>
               <span className="text-[11px]">
                 <TxLink hash={e.tx} />

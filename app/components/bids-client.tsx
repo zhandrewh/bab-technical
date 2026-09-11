@@ -21,7 +21,7 @@ export type BidRow = {
   tx: string;
 };
 
-const input = "w-full border border-border bg-background px-2 py-1.5 text-[13px] outline-none focus:border-gold-dim";
+const input = "w-full rounded-lg border border-border bg-background/70 px-3 py-2 text-[13px] outline-none transition-colors focus:border-gold-dim focus:ring-2 focus:ring-gold/15";
 
 export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: { id: string; seller: string; price: string; resolver: string }[] }) {
   const { address } = useAccount();
@@ -126,9 +126,9 @@ export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: {
           <label className="grid gap-1"><span className="label">max seller brier · {maxBrier.toFixed(2)}</span><input type="range" min={0.05} max={0.5} step={0.01} value={maxBrier} onChange={(e) => setMaxBrier(Number(e.target.value))} /></label>
           <label className="grid gap-1"><span className="label">expires in {days} days</span><input type="range" min={1} max={90} value={days} onChange={(e) => setDays(Number(e.target.value))} /></label>
           {address ? <Btn variant="primary" onClick={post} disabled={!!step}>escrow {usd(BigInt(Math.round(amount * 1e6)))} & post</Btn> : <p className="text-[12px] text-muted-foreground">Connect a wallet to post.</p>}
-          {step && <p className="caret text-[11px] uppercase tracking-widest text-gold-dim">{step}</p>}
+          {step && <p className="live text-[12px] text-gold-dim">{step}</p>}
           {lastTx && <p className="text-[12px]">confirmed <TxLink hash={lastTx} /></p>}
-          {err && <div className="rounded-sm border border-danger/50 bg-danger/5 p-2 text-[12px]"><span className="text-danger">[error]</span> {err}</div>}
+          {err && <div className="rounded-xl border border-danger/40 bg-danger/5 px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
           <p className="text-[11px] text-muted-foreground">Brier eligibility is checked from the public event log at fill time in v1, not enforced in the contract.</p>
         </div>
       </Panel>

@@ -1,6 +1,6 @@
 import { loadMarket } from "@/lib/claims";
 import { MarketTable } from "@/components/market-table";
-import { Rule, Panel } from "@/components/ui";
+import { Rule, ErrorNote } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export default async function Market() {
         how the seller split the price, how much they bonded, and how well calibrated they have been. The content stays encrypted until you buy
         or the exclusivity window ends.
       </p>
-      {error && <Panel tone="danger"><span className="text-[11px] uppercase tracking-widest text-danger">[error]</span> <span className="text-[13px]">{error}</span></Panel>}
+      {error && <ErrorNote>{error}</ErrorNote>}
       <MarketTable claims={claims} />
     </div>
   );

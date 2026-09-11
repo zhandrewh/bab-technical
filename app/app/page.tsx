@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAllEvents, type FeedEvent } from "@/lib/events";
 import { LiveFeed } from "@/components/feed";
-import { Eyebrow, Rule, Panel } from "@/components/ui";
+import { Eyebrow, Rule, Panel, ErrorNote, btnBase, btnVariant } from "@/components/ui";
 import { MARKET, usd, addrUrl } from "@/lib/chain";
 
 export const dynamic = "force-dynamic";
@@ -33,11 +33,11 @@ export default async function Home() {
           Verity sells a discovered window: facts sitting unread in public records, sold on the condition that they become public.
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link href="/market" className="border border-gold-dim px-3 py-1.5 text-[11px] uppercase tracking-widest text-gold transition-colors hover:bg-gold hover:text-background">
-            [ browse sealed claims ]
+          <Link href="/market" className={`${btnBase} ${btnVariant.primary} px-5 py-2.5`}>
+            Browse sealed claims →
           </Link>
-          <Link href="/commit" className="border border-border px-3 py-1.5 text-[11px] uppercase tracking-widest text-gold-dim transition-colors hover:border-gold hover:text-gold">
-            [ commit a finding ]
+          <Link href="/commit" className={`${btnBase} ${btnVariant.idle} px-5 py-2.5`}>
+            Commit a finding
           </Link>
         </div>
       </section>
@@ -51,14 +51,14 @@ export default async function Home() {
         ].map(([k, v]) => (
           <Panel key={k as string} className="text-center">
             <div className="label">{k}</div>
-            <div className={`mt-1 text-lg ${k === "bonds slashed" && slashed > 0n ? "text-danger" : "text-gold"}`}>{v}</div>
+            <div className={`mt-1 text-2xl font-semibold ${k === "bonds slashed" && slashed > 0n ? "text-danger" : "text-gold"}`}>{v}</div>
           </Panel>
         ))}
       </section>
 
       <section className="space-y-3">
         <Rule left="live settlement feed" right={<a href={addrUrl(MARKET)} target="_blank" rel="noreferrer" className="hover:text-gold">market {MARKET.slice(0, 8)}… ↗</a>} />
-        {error && <Panel tone="danger"><span className="text-[11px] uppercase tracking-widest text-danger">[error]</span> <span className="text-[13px]">{error}</span></Panel>}
+        {error && <ErrorNote>{error}</ErrorNote>}
         <LiveFeed initial={events} />
       </section>
 
@@ -69,7 +69,7 @@ export default async function Home() {
           ["3 · settle", "An institution indifferent to the contract resolves it. True and public pays the seller. True and suppressed pays the public-goods pool. False slashes the bond."],
         ].map(([h, b]) => (
           <Panel key={h}>
-            <div className="text-[11px] uppercase tracking-widest text-gold">{h}</div>
+            <div className="text-[15px] font-semibold text-gold first-letter:uppercase">{h}</div>
             <p className="mt-2 text-[13px] leading-relaxed text-foreground/80">{b}</p>
           </Panel>
         ))}
