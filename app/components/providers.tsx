@@ -1,7 +1,7 @@
 "use client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, createConfig, http } from "wagmi";
-import { injected } from "wagmi/connectors";
+// `injected` from the main entry: the wagmi/connectors barrel drags in the CDP SDK and unresolved @x402/* peers.
+import { WagmiProvider, createConfig, http, injected } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { useState } from "react";
 

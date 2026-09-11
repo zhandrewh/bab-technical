@@ -1,7 +1,8 @@
 // x402 (HTTP 402) payment gate for agent purchases. The buyer's agent signs an EIP-3009 USDC authorization to the
 // Verity relayer; the public facilitator verifies and settles it; the relayer then calls purchaseFor(claimId, buyer)
 // so both tranches land in escrow exactly as a direct purchase would. No browser, no wallet popup.
-import { useFacilitator } from "x402/verify";
+// Aliased: not a React hook, despite the name.
+import { useFacilitator as facilitatorClient } from "x402/verify";
 import { exact } from "x402/schemes";
 import type { PaymentRequirements } from "x402/types";
 import { createWalletClient, http, type Address, type Hex } from "viem";
@@ -36,7 +37,7 @@ export const paymentRequired = (req: PaymentRequirements, error = "X-PAYMENT hea
 
 /** Verify + settle an X-PAYMENT header. Returns the payer (the buyer) or an error string. */
 export async function collect(header: string, req: PaymentRequirements): Promise<{ ok: true; payer: Address; tx: string } | { ok: false; error: string }> {
-  const { verify, settle } = useFacilitator({ url: FACILITATOR_URL });
+  const { verify, settle } = facilitatorClient({ url: FACILITATOR_URL });
   let payload;
   try {
     payload = exact.evm.decodePayment(header);

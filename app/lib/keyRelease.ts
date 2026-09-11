@@ -11,7 +11,7 @@
 // so no single party holds the key. See DESIGN.md.
 import { verifyMessage, type Address, type Hex } from "viem";
 import { marketAbi } from "./abi";
-import { MARKET, publicClient, chain } from "./chain";
+import { MARKET, publicClient } from "./chain";
 import { unsealKey } from "./crypto";
 import { fetchEnvelopeJson, parseEnvelope } from "./storage";
 

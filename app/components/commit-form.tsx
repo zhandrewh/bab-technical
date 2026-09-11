@@ -139,7 +139,7 @@ export function CommitForm() {
             ))}
           </div>
           <input className={`${input} mt-3`} placeholder={RES[resolver].query} value={query} onChange={(e) => setQuery(e.target.value)} />
-          <p className="mt-1 text-[11px] text-muted-foreground">{RES[resolver].hint} Claims resolvable by the buyer's own publication are not accepted.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{RES[resolver].hint} Claims resolvable by the buyer&apos;s own publication are not accepted.</p>
           <label className="mt-3 grid gap-1">
             <span className="label">deadline</span>
             <input type="datetime-local" className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} />

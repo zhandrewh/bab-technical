@@ -15,7 +15,7 @@ export default function AgentsPage() {
       <p className="max-w-3xl text-[13px] leading-relaxed text-muted-foreground">
         Everything in the UI is available over HTTP so an agent can list, preview and buy with no UI. Payment is x402: the endpoint answers
         <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">402 Payment Required</code>
-        with the claim's current price; the agent signs a USDC authorization; the facilitator settles; the relayer calls
+        with the claim&apos;s current price; the agent signs a USDC authorization; the facilitator settles; the relayer calls
         <code className="mx-1 rounded-[3px] border border-border bg-secondary px-1 text-gold">purchaseFor(claimId, buyer)</code>
         so both tranches land in escrow exactly as a wallet purchase would.
       </p>
