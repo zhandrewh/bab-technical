@@ -107,7 +107,7 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
           )}
         </div>
         {expired && !pkg && <p className="mt-2 text-[12px] text-gold">Exclusivity expired: anyone can request the key now. No purchase needed.</p>}
-        {step && <p className="live mt-3 text-[12px] text-gold-dim">{step}</p>}
+        {step && <p className="mt-3 text-[12px] text-gold-dim">{step}</p>}
         {txs.map(([l, h]) => <div key={h} className="mt-1 text-[12px]">{l} ✓ <TxLink hash={h} /></div>)}
         {err && <div className="mt-3 glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
       </Panel>

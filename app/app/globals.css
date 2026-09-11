@@ -86,30 +86,6 @@ body {
   animation: bab-spin 60s linear infinite;
 }
 
-/* Live/pending indicator: a softly pulsing gold dot before the text. */
-@keyframes live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 45%, transparent);
-  }
-  50% {
-    opacity: 0.55;
-    box-shadow: 0 0 0 4px transparent;
-  }
-}
-.live::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 8px;
-  border-radius: 9999px;
-  background: var(--gold);
-  vertical-align: middle;
-  animation: live-pulse 1.8s ease-in-out infinite;
-}
-
 @keyframes feed-in {
   from {
     background: color-mix(in srgb, var(--gold) 12%, transparent);
@@ -125,7 +101,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .bab-spin,
   .bab-motion,
-  .live::before,
   .feed-new {
     animation: none !important;
     transition: none !important;
@@ -133,7 +108,8 @@ body {
 }
 
 /* ---------- Liquid glass ----------
-   Frosted fill; a specular rim drawn as a masked gradient border (bright top-left, glint bottom-right); springy press. */
+   Frosted fill; a specular rim drawn as a masked gradient border (bright top-left, glint bottom-right);
+   a sheen that follows the pointer (--mx/--my set by GlassPointer) and otherwise sits still; springy press. */
 
 .glass,
 .glass-gold,
@@ -207,6 +183,23 @@ body {
 }
 .glass-input::before {
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.16));
+}
+
+/* Pointer sheen, painted under content (z -1 inside the isolated box). */
+.glass::after,
+.glass-gold::after,
+.glass-danger::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at var(--mx, 20%) var(--my, 0%), rgba(255, 255, 255, 0.11), transparent 55%);
+  transition: opacity 0.3s;
+}
+.glass-gold::after {
+  background: radial-gradient(120% 90% at var(--mx, 20%) var(--my, 0%), color-mix(in srgb, var(--gold) 20%, transparent), transparent 55%);
 }
 
 /* Solid gold glass for primary actions: a liquid drop of the brand colour. */

@@ -68,7 +68,6 @@ const ago = (ts: number) => {
 
 export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: FeedEvent[]; limit?: number; claimId?: string; compact?: boolean }) {
   const [events, setEvents] = useState(initial);
-  const [status, setStatus] = useState("listening for new blocks");
   const seen = useRef(new Set(initial.map((e) => `${e.tx}:${e.logIndex}`)));
   const [fresh, setFresh] = useState<Set<string>>(new Set());
 
@@ -78,7 +77,6 @@ export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: F
     const tick = async () => {
       if (document.hidden) return; // no polling from background tabs; catch up on return
       try {
-        setStatus("polling base sepolia event log");
         const r = await fetch(url, { cache: "no-store" });
         const j = (await r.json()) as { events: FeedEvent[] };
         if (!alive) return;
@@ -92,9 +90,8 @@ export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: F
         }
         if (nu.size) setFresh(nu);
         setEvents((prev) => (nu.size || prev.length !== j.events.length ? j.events : prev));
-        setStatus(`listening · last poll ${new Date().toLocaleTimeString()}`);
       } catch {
-        setStatus("rpc unreachable — retrying in 6s");
+        // RPC unreachable; the next tick retries.
       }
     };
     const onVisible = () => !document.hidden && tick();
@@ -110,9 +107,6 @@ export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: F
   const rows = events.slice(0, limit);
   return (
     <div>
-      <div className="mb-2 text-[12px] text-muted-foreground">
-        <span className="live first-letter:uppercase">{status}</span>
-      </div>
       {rows.length === 0 && <div className="py-6 text-[13px] text-muted-foreground">No transactions yet. The first commit will appear here within one block.</div>}
       <ul className="glass divide-y divide-white/[0.06] overflow-hidden rounded-3xl">
         {rows.map((e) => {

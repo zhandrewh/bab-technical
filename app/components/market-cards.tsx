@@ -126,7 +126,7 @@ function Featured({ c }: { c: ClaimView }) {
   return (
     <article className="glass flex h-full flex-col rounded-3xl p-6">
       <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-gold">
-        <span className="live">{c.replay ? "Backtest replay" : "Featured basket"}</span>
+        <span>{c.replay ? "Backtest replay" : "Featured basket"}</span>
       </div>
       <Link href={`/claim/${c.id}`} className="group mt-4 flex items-start gap-4">
         <ResolverIcon r={c.resolver} big />

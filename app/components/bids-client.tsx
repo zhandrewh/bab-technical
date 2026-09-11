@@ -126,7 +126,7 @@ export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: {
           <label className="grid gap-1"><span className="label">max seller brier · {maxBrier.toFixed(2)}</span><input type="range" min={0.05} max={0.5} step={0.01} value={maxBrier} onChange={(e) => setMaxBrier(Number(e.target.value))} /></label>
           <label className="grid gap-1"><span className="label">expires in {days} days</span><input type="range" min={1} max={90} value={days} onChange={(e) => setDays(Number(e.target.value))} /></label>
           {address ? <Btn variant="primary" onClick={post} disabled={!!step}>escrow {usd(BigInt(Math.round(amount * 1e6)))} & post</Btn> : <p className="text-[12px] text-muted-foreground">Connect a wallet to post.</p>}
-          {step && <p className="live text-[12px] text-gold-dim">{step}</p>}
+          {step && <p className="text-[12px] text-gold-dim">{step}</p>}
           {lastTx && <p className="text-[12px]">confirmed <TxLink hash={lastTx} /></p>}
           {err && <div className="glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
           <p className="text-[11px] text-muted-foreground">Brier eligibility is checked from the public event log at fill time in v1, not enforced in the contract.</p>
