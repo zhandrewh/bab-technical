@@ -20,6 +20,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const header = req.headers.get("x-payment");
   if (!header) return paymentRequired(requirements);
 
+  // Refuse before settlement if this payer already owns the claim — never take money for a purchase that will revert.
+  try {
+    const from = JSON.parse(atob(header)).payload?.authorization?.from as `0x${string}` | undefined;
+    if (from && (await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "purchased", args: [id, from] })))
+      return Response.json({ error: "already purchased — request the key at /api/key/" + id }, { status: 409 });
+  } catch {}
+
   const paid = await collect(header, requirements);
   if (!paid.ok) return paymentRequired(requirements, paid.error);
 
@@ -27,6 +34,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (allowance < price) {
     const h = await r.writeContract({ address: USDC, abi: erc20Abi, functionName: "approve", args: [MARKET, 2n ** 255n] });
     await publicClient.waitForTransactionReceipt({ hash: h });
+    // Load-balanced RPC: wait until the approval is visible before purchaseFor estimates gas against it.
+    for (let i = 0; i < 30; i++) {
+      const a = await publicClient.readContract({ address: USDC, abi: erc20Abi, functionName: "allowance", args: [r.account.address, MARKET] });
+      if (a >= price) break;
+      await new Promise((res) => setTimeout(res, 1500));
+    }
   }
   const hash = await r.writeContract({ address: MARKET, abi: marketAbi, functionName: "purchaseFor", args: [id, paid.payer] });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });

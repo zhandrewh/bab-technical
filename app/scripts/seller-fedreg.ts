@@ -15,7 +15,7 @@
 // Usage: tsx scripts/seller-fedreg.ts [--once] [--max=N] [--backfill]
 //   --backfill picks filings from the most recent *already-published* issue so a demo can settle TRUE in minutes.
 //   These are labeled "backfill" in the claim text — they demonstrate settlement, not forecasting edge.
-import { log, dim, wallet, send, ensureAllowance, publicClient } from "./env";
+import { log, dim, wallet, send, ensureAllowance, publicClient, retry } from "./env";
 import { marketAbi } from "../lib/abi";
 import { MARKET, CUSTODIAN_PUBKEY, usd } from "../lib/chain";
 import { encryptPackage, hashText } from "../lib/crypto";
@@ -142,7 +142,9 @@ export async function commitClaim(pkg: EvidencePackage, pricing: ReturnType<type
     payloadURI,
     bloom: buildBloom(pkg.entities),
   };
-  const { result: claimId } = await publicClient.simulateContract({ account: w.account, address: MARKET, abi: marketAbi, functionName: "commit", args: [params] });
+  const { result: claimId } = await retry("simulate commit", () =>
+    publicClient.simulateContract({ account: w.account, address: MARKET, abi: marketAbi, functionName: "commit", args: [params] }),
+  );
   await send(role.toLowerCase(), `commit claim #${claimId} (bond ${usd(pricing.bond)})`, w.writeContract({ address: MARKET, abi: marketAbi, functionName: "commit", args: [params] }));
   return claimId;
 }

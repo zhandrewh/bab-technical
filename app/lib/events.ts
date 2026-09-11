@@ -4,6 +4,9 @@ import { bidsAbi, marketAbi } from "./abi";
 import { BIDS, DEPLOY_BLOCK, MARKET, publicClient } from "./chain";
 
 const CHUNK = 9_000n;
+// The public RPC is load-balanced; a lagging node returns no logs for the newest blocks. Only cache ranges this far
+// behind the head as final, and rescan the tail on every call so a late node never hides an event permanently.
+const FINALITY = 10n;
 
 export type FeedEvent = {
   kind: string;
@@ -29,6 +32,8 @@ export async function getAllEvents(): Promise<FeedEvent[]> {
   const latest = await publicClient.getBlock();
   let from = cache ? cache.toBlock + 1n : DEPLOY_BLOCK;
   const events = cache ? [...cache.events] : [];
+  const safe = latest.number > FINALITY ? latest.number - FINALITY : 0n;
+  let safeCount = events.length;
   const addresses = [MARKET, BIDS].filter((a) => !/^0x0+$/.test(a)) as Address[];
   if (!addresses.length) return [];
   while (from <= latest.number) {
@@ -55,7 +60,9 @@ export async function getAllEvents(): Promise<FeedEvent[]> {
     from = to + 1n;
   }
   events.sort((a, b) => Number(BigInt(a.block) - BigInt(b.block)) || a.logIndex - b.logIndex);
-  cache = { toBlock: latest.number, events, latestTs: Number(latest.timestamp) };
+  safeCount = events.filter((e) => BigInt(e.block) <= safe).length;
+  const cachedTo = safe > (cache?.toBlock ?? DEPLOY_BLOCK - 1n) ? safe : (cache?.toBlock ?? DEPLOY_BLOCK - 1n);
+  cache = { toBlock: cachedTo, events: events.slice(0, safeCount), latestTs: Number(latest.timestamp) };
   return events;
 }
 

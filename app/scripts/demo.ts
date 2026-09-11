@@ -4,7 +4,8 @@
 //   Act 2 — THE HAPPY PATH. The Federal Register monitor commits a real claim from live data. The newsroom agent
 //           runs the overlap check, buys over x402, decrypts. The oracle resolves TRUE; contingent + bond settle.
 //   Act 3 — AUTO-RELEASE. A claim with a 60-second exclusivity window opens to a stranger with no action by anyone.
-import { log, dim, warn, sleep, wallet } from "./env";
+import { log, dim, warn, sleep, wallet, publicClient } from "./env";
+import { marketAbi } from "../lib/abi";
 import { runFabricator } from "./fabricator";
 import { runSeller } from "./seller-fedreg";
 import { runBuyer } from "./buyer-newsroom";
@@ -23,7 +24,16 @@ const banner = (s: string) => console.log(`\n\x1b[38;2;254;203;51m━━━ ${s}
   const ex = BigInt(process.env.DEMO_EXCLUSIVITY_SECONDS ?? 3600);
 
   banner("ACT 1 · THE SLASH");
-  const fake = await runFabricator({ exclusivitySeconds: ex, deadlineHours: 48 });
+  // Resume: reuse an open fabricated claim from an interrupted run rather than bonding a new one.
+  const fab = wallet("FABRICATOR").account.address.toLowerCase();
+  const n = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "claimCount" });
+  let fake: bigint | null = null;
+  for (let i = 0n; i < n; i++) {
+    const c = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "getClaim", args: [i] });
+    if (c.seller.toLowerCase() === fab && c.status !== 3) fake = i;
+  }
+  if (fake !== null) log("demo", `resuming with open fabricated claim #${fake}`);
+  else fake = await runFabricator({ exclusivitySeconds: ex, deadlineHours: 48 });
   await runBuyer(fake.toString());
   log("demo", "oracle resolving…");
   await runOracleUntilSettled([fake], 8_000);
