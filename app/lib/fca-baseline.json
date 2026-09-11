@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-09-11T18:08:16+00:00",
+  "windowDays": 60,
+  "method": "CourtListener RECAP notices -> justice.gov press releases with 'False Claims' in the title whose title names a distinctive caption token (>=6 chars, not generic) 1..60 days after the notice. Title-only matching; a floor.",
+  "dojCorpus": {
+    "n": 2000,
+    "range": [
+      "2015-10-14",
+      "2026-09-10"
+    ]
+  },
+  "treatment": {
+    "n": 83,
+    "hits30": 8,
+    "hits60": 9,
+    "p30": 0.0963855421686747,
+    "p60": 0.10843373493975904,
+    "lagMedian": 14,
+    "lagRange": [
+      1,
+      42
+    ],
+    "announcedBefore": 2,
+    "dateRange": [
+      "2018-12-10",
+      "2026-06-08"
+    ]
+  },
+  "control": {
+    "n": 114,
+    "hits30": 2,
+    "hits60": 6,
+    "p30": 0.017543859649122806,
+    "p60": 0.05263157894736842,
+    "lagMedian": 41.0,
+    "lagRange": [
+      7,
+      58
+    ],
+    "announcedBefore": 2,
+    "dateRange": [
+      "2019-08-09",
+      "2026-07-09"
+    ]
+  }
+}

@@ -1,18 +1,19 @@
-// Oracle proposer service (spec 7). Trust model: a single bonded proposer. Anyone may dispute within the
-// challenge window by posting a matching bond; disputed claims go to the owner backstop. Not "decentralized".
+// Oracle proposer service (spec 2). Trust model: a single bonded proposer. Anyone may dispute within the challenge
+// window by posting a matching bond; disputed claims go to the owner backstop. Not "decentralized".
 //
-// Loop per open claim: fetch envelope -> verify payloadHash (mismatch = FABRICATED) -> obtain key via the same
-// KeyReleaseProvider buyers use (oracle role) -> run the resolver adapter -> markPublished / propose -> settle.
+// Loop per open basket: fetch envelope -> verify payloadHash (mismatch = FABRICATED) -> obtain key via the same
+// KeyReleaseProvider buyers use (oracle role) -> verify every item against itemsRoot and its cited docket entry
+// -> evaluate each item against justice.gov -> propose(outcome, hitMask, evidence JSON) -> settle after the window.
 import { log, dim, warn, wallet, send, ensureAllowance, publicClient, sleep } from "./env";
 import { marketAbi } from "../lib/abi";
 import { MARKET, OUTCOMES, STATUSES, usd } from "../lib/chain";
 import { decryptPackage, hashEnvelopeJson } from "../lib/crypto";
-import { fetchEnvelopeJson, parseEnvelope } from "../lib/storage";
+import { fetchEnvelopeJson, parseEnvelope, storeEnvelope } from "../lib/storage";
 import { CustodianKeyRelease, keyRequestMessage } from "../lib/keyRelease";
 import { getCommitted } from "../lib/events";
-import { resolve } from "../lib/resolvers";
+import { resolveBasket } from "../lib/fca";
 import { pushReputation } from "./reputation";
-import type { EvidencePackage } from "../lib/package";
+import type { BasketEvidence, EvidencePackage } from "../lib/package";
 
 const OUTCOME_ID = { TRUE: 1, FALSE: 2, FABRICATED: 3 } as const;
 
@@ -43,8 +44,7 @@ export async function processClaim(claimId: bigint): Promise<boolean> {
   }
   if (status === "PROPOSED") {
     const window = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "challengeWindow" });
-    const readyAt = Number(c.proposedAt + window);
-    const wait = readyAt - Math.floor(Date.now() / 1000);
+    const wait = Number(c.proposedAt + window) - Math.floor(Date.now() / 1000);
     if (wait > 0) {
       dim(`#${claimId} proposed ${OUTCOMES[c.proposed]}; challenge window closes in ${wait}s`);
       return false;
@@ -56,25 +56,38 @@ export async function processClaim(claimId: bigint): Promise<boolean> {
 
   // OPEN
   const { pkg, hashOk, uri } = await readPackage(claimId);
-  let outcome: keyof typeof OUTCOME_ID;
-  let evidence: string;
+  let ev: BasketEvidence;
   if (!hashOk || !pkg) {
-    outcome = "FABRICATED";
-    evidence = `payload hash mismatch at ${uri.slice(0, 60)}`;
+    ev = { claimId: claimId.toString(), resolver: "DOJ_FCA", checkedAt: new Date().toISOString(), outcome: "FABRICATED", hitMask: "0", hits: 0, note: `payload hash mismatch at ${uri.slice(0, 60)}`, items: [] };
   } else {
-    const r = await resolve(pkg);
-    dim(`#${claimId} ${pkg.claim.resolver}: ${r.outcome} — ${r.note}`);
-    if (r.publicAt && c.publishedAt === 0n) {
-      await send("oracle", `markPublished #${claimId}`, w.writeContract({ address: MARKET, abi: marketAbi, functionName: "markPublished", args: [claimId, r.evidenceURI] }));
-    }
-    if (r.outcome === "UNRESOLVED") return false;
-    outcome = r.outcome;
-    evidence = r.evidenceURI;
+    const onchain = {
+      claimId: claimId.toString(),
+      n: c.n,
+      k: c.k,
+      itemsRoot: c.itemsRoot,
+      committedAt: Number(c.committedAt),
+      deadline: Number(c.deadline),
+      exclusivityEnd: Number(c.exclusivityEnd),
+    };
+    ev = await resolveBasket(pkg, onchain);
+  }
+  dim(`#${claimId} ${ev.resolver}: ${ev.outcome} — ${ev.note}`);
+  if (ev.outcome === "UNRESOLVED") return false;
+
+  const evidenceURI = await storeEnvelope(JSON.stringify(ev));
+  // A hit is a DOJ press release: by construction the finding is on the public record.
+  if (ev.outcome === "TRUE" && c.publishedAt === 0n) {
+    const firstHit = ev.items.find((x) => x.hit)?.releaseURL ?? evidenceURI;
+    await send("oracle", `markPublished #${claimId}`, w.writeContract({ address: MARKET, abi: marketAbi, functionName: "markPublished", args: [claimId, firstHit] }));
   }
   const bond = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "proposerBond" });
   await ensureAllowance("ORACLE", MARKET, bond);
-  log("oracle", `proposing #${claimId} = ${outcome} (bonding ${usd(bond)})`);
-  await send("oracle", `propose #${claimId} ${outcome}`, w.writeContract({ address: MARKET, abi: marketAbi, functionName: "propose", args: [claimId, OUTCOME_ID[outcome], evidence] }));
+  log("oracle", `proposing #${claimId} = ${ev.outcome} · ${ev.hits} of ${c.n} hit (bonding ${usd(bond)})`);
+  await send(
+    "oracle",
+    `propose #${claimId} ${ev.outcome}`,
+    w.writeContract({ address: MARKET, abi: marketAbi, functionName: "propose", args: [claimId, OUTCOME_ID[ev.outcome], BigInt(ev.hitMask), evidenceURI] }),
+  );
   return false;
 }
 
@@ -94,11 +107,11 @@ export async function runOracleUntilSettled(ids: bigint[], pollMs = 10_000) {
 
 if (require.main === module) {
   (async () => {
-    const n = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "claimCount" });
-    log("oracle", `watching ${n} claims`);
     for (;;) {
+      const n = await publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "claimCount" });
+      log("oracle", `watching ${n} baskets`);
       for (let i = 0n; i < n; i++) await processClaim(i).catch((e) => warn("oracle", `#${i}: ${e.message.slice(0, 160)}`));
-      await sleep(30_000);
+      await sleep(60_000);
     }
   })();
 }

@@ -1,5 +1,7 @@
 // Calibration (spec 8): per-seller Brier score by domain, computed off-chain from Committed + Settled events.
-// Brier = mean((p - o)^2), p = stated confidence, o = 1 if TRUE else 0. Lower is better; 0.25 = coin flip.
+// Brier = mean((p - o)^2), p = stated confidence P(hits >= k), o = 1 if TRUE else 0. Lower is better; 0.25 = coin flip.
+// Item precision (itemsHit / itemsCommitted) feeds seller lift. Replay (backtest) claims are excluded from both, and
+// fabricated baskets never count toward items.
 import type { FeedEvent } from "./events";
 import { hexToString, type Hex } from "viem";
 
@@ -10,6 +12,9 @@ export type Prediction = {
   predicted: number;
   outcome: "TRUE" | "FALSE" | "FABRICATED";
   actual: 0 | 1;
+  n: number;
+  k: number;
+  hits: number;
   bond: string;
   slashed: string;
   settledAt: number;
@@ -24,6 +29,9 @@ export type SellerCalibration = {
   history: Prediction[];
   open: number;
   slashedTotal: bigint;
+  itemsCommitted: number;
+  itemsHit: number;
+  replays: number; // settled backtest baskets, shown but not scored
 };
 
 const OUT = ["NONE", "TRUE", "FALSE", "FABRICATED"] as const;
@@ -40,7 +48,7 @@ export function calibrationFrom(events: FeedEvent[]): Map<string, SellerCalibrat
   const out = new Map<string, SellerCalibration>();
   const get = (s: string) => {
     const k = s.toLowerCase();
-    if (!out.has(k)) out.set(k, { seller: k, brier: null, n: 0, byDomain: {}, history: [], open: 0, slashedTotal: 0n });
+    if (!out.has(k)) out.set(k, { seller: k, brier: null, n: 0, byDomain: {}, history: [], open: 0, slashedTotal: 0n, itemsCommitted: 0, itemsHit: 0, replays: 0 });
     return out.get(k)!;
   };
   for (const e of events) {
@@ -53,15 +61,28 @@ export function calibrationFrom(events: FeedEvent[]): Map<string, SellerCalibrat
       if (!c) continue;
       const s = get(c.args.seller as string);
       s.open--;
+      const resolver = b32(c.args.resolverId);
+      if (resolver.endsWith("_REPLAY")) {
+        s.replays++;
+        continue;
+      }
       const outcome = OUT[Number(e.args.outcome)] as Prediction["outcome"];
+      const n = Number(c.args.n), hits = Number(e.args.hits);
+      if (outcome !== "FABRICATED") {
+        s.itemsCommitted += n;
+        s.itemsHit += hits;
+      }
       s.slashedTotal += BigInt(e.args.bondSlashed as string);
       s.history.push({
         claimId: e.claimId!,
         domain: b32(c.args.domain),
-        resolver: b32(c.args.resolverId),
+        resolver,
         predicted: Number(c.args.confidenceBps) / 10_000,
         outcome,
         actual: outcome === "TRUE" ? 1 : 0,
+        n,
+        k: Number(c.args.k),
+        hits,
         bond: c.args.bond as string,
         slashed: e.args.bondSlashed as string,
         settledAt: e.ts,

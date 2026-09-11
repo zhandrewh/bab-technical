@@ -20,7 +20,9 @@ export function SettlementTable({ e, slashed }: { e: FeedEvent; slashed?: FeedEv
   return (
     <Panel tone={o === "TRUE" ? "gold" : "danger"}>
       <Rule left={`settled ${o}`} tone={o === "TRUE" ? "gold" : "danger"} right={<TxLink hash={e.tx} label="settle tx" />} />
-      <div className="mt-2 text-[12px] text-muted-foreground">public by deadline: {a.publicByDeadline ? "yes" : "no"}</div>
+      <div className="mt-2 text-[12px] text-muted-foreground">
+        {o !== "FABRICATED" && <>{String(a.hits)} items hit · </>}public by deadline: {a.publicByDeadline ? "yes" : "no"}
+      </div>
       <table className="mt-3 w-full text-[13px]">
         <tbody className="divide-y divide-border/50">
           {rows.map(([k, v, n]) => (

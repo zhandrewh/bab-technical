@@ -1,0 +1,29 @@
+{
+  "note": "Caption tokens that cannot be matchTerms: legal boilerplate, and words that name a sector, place, or institution type rather than one defendant. Shared by research/backtest-fca.py and app/lib/fca.ts. A matchTerm must also be >= 6 characters.",
+  "boilerplate": [
+    "inc", "llc", "corp", "corporation", "company", "companies", "co", "the", "of", "and", "ltd", "lp", "llp", "pc", "pa", "pllc",
+    "group", "groups", "holding", "holdings", "international", "usa", "us", "america", "united", "states", "et", "al", "ex", "rel",
+    "sealed", "under", "seal", "doe", "relator", "relators", "plaintiff", "defendant", "defendants", "unknown", "others"
+  ],
+  "generic": [
+    "health", "healthcare", "medical", "medicine", "services", "service", "systems", "system", "solutions", "technologies", "technology",
+    "home", "homes", "care", "center", "centers", "centre", "hospital", "hospitals", "clinic", "clinics", "clinical", "pharmacy", "pharmacies",
+    "pharmaceutical", "pharmaceuticals", "pharma", "laboratory", "laboratories", "labs", "testing", "diagnostic", "diagnostics", "imaging",
+    "therapy", "therapies", "physical", "rehabilitation", "rehab", "nursing", "hospice", "ambulance", "surgical", "surgery", "surgeons",
+    "dental", "orthopedic", "orthopedics", "behavioral", "wellness", "living", "senior", "seniors", "assisted", "physicians", "physician",
+    "doctors", "practice", "practices", "specialty", "specialists", "pediatric", "pediatrics", "children", "veterans", "cancer", "family",
+    "community", "national", "american", "global", "regional", "general", "integrated", "advanced", "premier", "first", "central",
+    "southern", "northern", "eastern", "western", "atlantic", "pacific", "midwest", "university", "college", "school", "schools",
+    "education", "educational", "institute", "foundation", "association", "society", "alliance", "partners", "associates", "management",
+    "network", "networks", "enterprises", "industries", "industry", "consulting", "operations", "property", "properties", "mortgage",
+    "financial", "capital", "insurance", "bank", "lending", "mobile", "electric", "electrical", "energy", "construction", "contractors",
+    "contracting", "engineering", "defense", "aerospace", "logistics", "supply", "supplies", "products", "research", "science", "sciences",
+    "protection", "security", "collection", "collections", "agency", "access", "investigations", "government", "federal", "county", "city",
+    "district", "municipal", "authority", "department", "trust", "fund", "church", "ministries",
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii",
+    "idaho", "illinois", "indiana", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada", "hampshire", "jersey", "mexico", "carolina", "dakota", "oklahoma",
+    "oregon", "pennsylvania", "rhode", "island", "tennessee", "texas", "vermont", "virginia", "washington", "wisconsin", "wyoming",
+    "puerto", "columbia", "york", "chicago", "houston", "angeles", "brooklyn", "manhattan", "boston", "atlanta", "dallas", "miami"
+  ]
+}

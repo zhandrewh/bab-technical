@@ -19,13 +19,17 @@ function describe(e: FeedEvent): { tag: string; tone: string; text: React.ReactN
   );
   switch (e.kind) {
     case "Committed":
-      return { tag: "commit", tone: "text-gold", text: <>{short(a.seller)} sealed claim {claim} · bond {$(a.bond)} · ask {$(a.upfront)} + {$(a.contingent)} contingent</> };
+      return { tag: "commit", tone: "text-gold", text: <>{short(a.seller)} sealed {claim}: “{String(a.teaser)}” · bond {$(a.bond)}</> };
     case "Purchased":
       return { tag: "purchase", tone: "text-gold", text: <>{short(a.buyer)} bought {claim} blind · {$(a.upfrontPaid)} to seller, {$(a.contingentEscrowed)} escrowed</> };
     case "Published":
       return { tag: "public", tone: "text-foreground", text: <>{claim} reached the public record</> };
     case "Proposed":
-      return { tag: "propose", tone: "text-gold-dim", text: <>oracle proposed {claim} = {OUT[Number(a.outcome)]} · challenge window open</> };
+      return {
+        tag: "propose",
+        tone: "text-gold-dim",
+        text: <>oracle proposed {claim} = {OUT[Number(a.outcome)]}{OUT[Number(a.outcome)] !== "FABRICATED" && <> · {BigInt(a.hitMask as string).toString(2).split("").filter((b) => b === "1").length} hits</>} · challenge window open</>,
+      };
     case "Disputed":
       return { tag: "dispute", tone: "text-danger", text: <>{short(a.disputer)} disputed {claim} · to owner backstop</> };
     case "DisputeResolved":
@@ -38,6 +42,7 @@ function describe(e: FeedEvent): { tag: string; tone: string; text: React.ReactN
         text: (
           <>
             {claim} settled {o}
+            {o !== "FABRICATED" && ` · ${String(a.hits)} hit`}
             {o === "TRUE" ? (a.publicByDeadline ? ` · ${$(a.contingentToSeller)} contingent to seller` : ` · unpublished: ${$(a.contingentToPool)} to public-goods pool`) : ` · ${$(a.contingentRefunded)} refunded to buyers`}
           </>
         ),

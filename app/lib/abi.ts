@@ -54,6 +54,45 @@ export const marketAbi = [
  },
  {
   "type": "function",
+  "name": "MAX_ITEMS",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "MAX_TEASER",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "MAX_WINDOW",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "buyersOf",
   "inputs": [
    {
@@ -131,9 +170,24 @@ export const marketAbi = [
     "internalType": "struct VerityMarket.CommitParams",
     "components": [
      {
-      "name": "claimHash",
+      "name": "n",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "k",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "itemsRoot",
       "type": "bytes32",
       "internalType": "bytes32"
+     },
+     {
+      "name": "teaserBody",
+      "type": "string",
+      "internalType": "string"
      },
      {
       "name": "payloadHash",
@@ -295,6 +349,21 @@ export const marketAbi = [
       "internalType": "enum VerityMarket.Outcome"
      },
      {
+      "name": "n",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "k",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "hits",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
       "name": "confidenceBps",
       "type": "uint16",
       "internalType": "uint16"
@@ -330,6 +399,16 @@ export const marketAbi = [
       "internalType": "uint64"
      },
      {
+      "name": "proposedMask",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "hitMask",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
       "name": "upfront",
       "type": "uint128",
       "internalType": "uint128"
@@ -350,7 +429,7 @@ export const marketAbi = [
       "internalType": "uint128"
      },
      {
-      "name": "claimHash",
+      "name": "itemsRoot",
       "type": "bytes32",
       "internalType": "bytes32"
      },
@@ -426,6 +505,16 @@ export const marketAbi = [
       "internalType": "uint32"
      },
      {
+      "name": "itemsCommitted",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "itemsHit",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
       "name": "bondsPosted",
       "type": "uint128",
       "internalType": "uint128"
@@ -463,6 +552,30 @@ export const marketAbi = [
    }
   ],
   "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "itemLeaf",
+  "inputs": [
+   {
+    "name": "index",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "itemHash",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "stateMutability": "pure"
  },
  {
   "type": "function",
@@ -553,6 +666,25 @@ export const marketAbi = [
  },
  {
   "type": "function",
+  "name": "popcount",
+  "inputs": [
+   {
+    "name": "x",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "count",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "pure"
+ },
+ {
+  "type": "function",
   "name": "propose",
   "inputs": [
    {
@@ -564,6 +696,11 @@ export const marketAbi = [
     "name": "outcome",
     "type": "uint8",
     "internalType": "enum VerityMarket.Outcome"
+   },
+   {
+    "name": "hitMask",
+    "type": "uint64",
+    "internalType": "uint64"
    },
    {
     "name": "evidenceURI",
@@ -663,6 +800,25 @@ export const marketAbi = [
  },
  {
   "type": "function",
+  "name": "replayResolver",
+  "inputs": [
+   {
+    "name": "",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
   "name": "resolveDispute",
   "inputs": [
    {
@@ -674,6 +830,11 @@ export const marketAbi = [
     "name": "outcome",
     "type": "uint8",
     "internalType": "enum VerityMarket.Outcome"
+   },
+   {
+    "name": "hitMask",
+    "type": "uint64",
+    "internalType": "uint64"
    }
   ],
   "outputs": [],
@@ -742,6 +903,11 @@ export const marketAbi = [
     "name": "allowed",
     "type": "bool",
     "internalType": "bool"
+   },
+   {
+    "name": "replay",
+    "type": "bool",
+    "internalType": "bool"
    }
   ],
   "outputs": [],
@@ -759,6 +925,25 @@ export const marketAbi = [
   ],
   "outputs": [],
   "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "teaser",
+  "inputs": [
+   {
+    "name": "",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "string",
+    "internalType": "string"
+   }
+  ],
+  "stateMutability": "view"
  },
  {
   "type": "function",
@@ -787,6 +972,40 @@ export const marketAbi = [
   "stateMutability": "view"
  },
  {
+  "type": "function",
+  "name": "verifyItem",
+  "inputs": [
+   {
+    "name": "id",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "index",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "itemHash",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "proof",
+    "type": "bytes32[]",
+    "internalType": "bytes32[]"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "bool",
+    "internalType": "bool"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
   "type": "event",
   "name": "Committed",
   "inputs": [
@@ -803,21 +1022,39 @@ export const marketAbi = [
     "internalType": "address"
    },
    {
-    "name": "claimHash",
+    "name": "resolverId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "n",
+    "type": "uint8",
+    "indexed": false,
+    "internalType": "uint8"
+   },
+   {
+    "name": "k",
+    "type": "uint8",
+    "indexed": false,
+    "internalType": "uint8"
+   },
+   {
+    "name": "itemsRoot",
     "type": "bytes32",
     "indexed": false,
     "internalType": "bytes32"
+   },
+   {
+    "name": "teaser",
+    "type": "string",
+    "indexed": false,
+    "internalType": "string"
    },
    {
     "name": "payloadHash",
     "type": "bytes32",
     "indexed": false,
-    "internalType": "bytes32"
-   },
-   {
-    "name": "resolverId",
-    "type": "bytes32",
-    "indexed": true,
     "internalType": "bytes32"
    },
    {
@@ -892,6 +1129,12 @@ export const marketAbi = [
     "type": "uint8",
     "indexed": false,
     "internalType": "enum VerityMarket.Outcome"
+   },
+   {
+    "name": "hitMask",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
    },
    {
     "name": "winner",
@@ -988,6 +1231,12 @@ export const marketAbi = [
     "internalType": "enum VerityMarket.Outcome"
    },
    {
+    "name": "hitMask",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
     "name": "evidenceURI",
     "type": "string",
     "indexed": false,
@@ -1073,6 +1322,12 @@ export const marketAbi = [
     "type": "bool",
     "indexed": false,
     "internalType": "bool"
+   },
+   {
+    "name": "replay",
+    "type": "bool",
+    "indexed": false,
+    "internalType": "bool"
    }
   ],
   "anonymous": false
@@ -1092,6 +1347,18 @@ export const marketAbi = [
     "type": "uint8",
     "indexed": false,
     "internalType": "enum VerityMarket.Outcome"
+   },
+   {
+    "name": "hits",
+    "type": "uint8",
+    "indexed": false,
+    "internalType": "uint8"
+   },
+   {
+    "name": "hitMask",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
    },
    {
     "name": "publicByDeadline",

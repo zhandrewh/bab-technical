@@ -19,9 +19,9 @@ contract Deploy is Script {
         vm.startBroadcast(vm.envUint("DEPLOYER_PK"));
         VerityMarket market = new VerityMarket(IERC20(USDC), pool, window, pbond);
         StandingBids bids = new StandingBids(market);
-        market.setResolver("FEDREG", true);
-        market.setResolver("SAM", true);
-        market.setResolver("COURTLISTENER", true);
+        market.setResolver("DOJ_FCA", true, false);
+        // Backtest baskets: settle normally, never counted in seller records or lift.
+        market.setResolver("DOJ_FCA_REPLAY", true, true);
         market.setOracle(oracle, true);
         vm.stopBroadcast();
 

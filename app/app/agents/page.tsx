@@ -26,7 +26,7 @@ export default function AgentsPage() {
         <Rule left="endpoints" />
         <Panel>
           <ul className="space-y-2 text-[13px]">
-            <li><span className="text-gold">GET /api/x402/claims</span> — all listings with every pre-purchase signal and the Bloom filter</li>
+            <li><span className="text-gold">GET /api/x402/claims</span> — all listings: teaser, n, k, random-basket odds, expected by chance, seller lift, bond, Bloom filter</li>
             <li><span className="text-gold">GET /api/x402/claims/:id/preview</span> — Bloom parameters, duplicate warnings; intersect locally</li>
             <li><span className="text-gold">GET /api/x402/claims/:id/buy</span> — x402-gated purchase of both tranches</li>
             <li><span className="text-gold">POST /api/key/:id</span> — signed key request; released iff <code className="text-gold-dim">canDecrypt(id, you)</code></li>
@@ -52,15 +52,17 @@ const { key } = await (await fetch("https://<host>/api/key/0", {
         <Rule left="fork the seller agent" />
         <Panel>
           <p className="text-[13px] leading-relaxed text-foreground/85">
-            <code className="text-gold">app/scripts/seller-fedreg.ts</code> is the reference monitor: it watches Federal Register public inspection,
-            scores filings for accountability signals, assembles an evidence package, encrypts it, prices it, and commits — no human in the loop.
-            Replace <code className="text-gold-dim">fetchCandidates</code>, <code className="text-gold-dim">scoreCandidate</code> and
-            <code className="text-gold-dim"> buildPackage</code> to point it at county dockets, WARN notices, or SAM.gov.
+            <code className="text-gold">app/scripts/seller-fca.ts</code> is the reference docket reader: it searches RECAP for notices that the
+            United States will intervene in a sealed False Claims Act case for purposes of settlement, drops cases DOJ has already announced,
+            builds a salted basket, picks the largest <em>k</em> its backtested hit rate supports, merklizes, encrypts and commits — no human in the loop.
+            Replace <code className="text-gold-dim">findNotices</code> and <code className="text-gold-dim">toItem</code> to point it at another list with
+            a public resolver.
           </p>
         </Panel>
-        <Code>{`cd app && npm run seller -- --max=3        # live public-inspection claims
-npm run buyer -- 0                         # newsroom agent: preview, x402 buy, decrypt
-npm run oracle                             # bonded proposer: resolve, propose, settle
+        <Code>{`cd app && npm run seller                   # live basket from the last 45 days of notices
+npm run seller -- --replay                 # backtest basket on DOJ_FCA_REPLAY (settles on history)
+npm run buyer -- 0                         # vendor-risk agent: odds + watchlist check, x402 buy, decrypt
+npm run oracle                             # bonded proposer: verify root + dockets, propose hitMask, settle
 npm run demo                               # the whole thing, slash first`}</Code>
       </section>
 

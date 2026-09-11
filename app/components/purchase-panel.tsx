@@ -7,6 +7,7 @@ import { keyRequestMessage } from "@/lib/keyRelease.client";
 import { decryptPackage, hashEnvelopeJson } from "@/lib/crypto";
 import { fetchEnvelopeJson, parseEnvelope } from "@/lib/storage";
 import { overlapCount } from "@/lib/bloom";
+import { commitBasket } from "@/lib/merkle";
 import type { ClaimView } from "@/lib/claims";
 import type { EvidencePackage } from "@/lib/package";
 import { Btn, Panel, Rule, TxLink } from "./ui";
@@ -21,8 +22,9 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
   const [txs, setTxs] = useState<[string, string][]>([]);
   const [pkg, setPkg] = useState<EvidencePackage | null>(null);
   const [hashOk, setHashOk] = useState<boolean | null>(null);
-  const [beat, setBeat] = useState("agency:defense-department, agency:health-and-human-services-department, cage:1abc2");
+  const [beat, setBeat] = useState("defendant:lockheed, defendant:raytheon, defendant:aetna, defendant:siemens, court:dcd");
   const overlap = overlapCount(c.bloom, beat.split(",").map((s) => s.trim()).filter(Boolean));
+  const rootOk = pkg ? pkg.items.length === c.n && commitBasket(pkg.items).root.toLowerCase() === c.itemsRoot.toLowerCase() : null;
   const price = BigInt(c.currentUpfront) + BigInt(c.contingent);
   const expired = c.exclusivityEnd <= Date.now() / 1000;
   const isSeller = address?.toLowerCase() === c.seller.toLowerCase();
@@ -113,7 +115,24 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
       {pkg && (
         <Panel tone="gold">
           <Rule left="unsealed" right={hashOk ? "hash matches commit" : "HASH MISMATCH"} tone={hashOk ? "gold" : "danger"} />
-          <p className="mt-3 text-[14px] leading-relaxed text-gold">{pkg.claim.text}</p>
+          <p className="mt-3 text-[14px] leading-relaxed text-gold">{pkg.claim.teaser}</p>
+          <div className="mt-2 text-[11px]">
+            {rootOk ? <span className="text-gold">✓ all {pkg.items.length} items verify against the committed root</span> : <span className="text-danger">basket does not match itemsRoot</span>}
+          </div>
+          <ol className="mt-3 space-y-2">
+            {pkg.items.map((it, i) => (
+              <li key={i} className="rounded-2xl bg-white/[0.03] px-3 py-2 text-[12px]">
+                <div className="font-medium text-foreground">{i + 1}. {it.defendant}</div>
+                <div className="text-muted-foreground">
+                  {it.court} · {it.docketNumber} · filed {it.entryDate} · watching for “{it.matchTerms.join("” / “")}”
+                </div>
+                <a href={it.courtlistenerURL} target="_blank" rel="noreferrer" className="text-gold-dim underline decoration-gold-faint hover:text-gold">
+                  docket ↗
+                </a>
+                <span className="ml-2 text-muted-foreground">{it.entryText.slice(0, 140)}</span>
+              </li>
+            ))}
+          </ol>
           <pre className="bab-scroll mt-3 max-h-60 overflow-auto whitespace-pre-wrap text-[12px] text-foreground/85">{pkg.analysis}</pre>
           <div className="mt-3 space-y-1">
             {pkg.sources.map((s) => (

@@ -1,25 +1,27 @@
 "use client";
+// Basket builder: rows of sealed FCA cases -> salted items -> itemsRoot. The "{k} of {n}" prefix is written by the
+// contract, so the form shows it locked; the seller only writes the rest of the headline.
 import { useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { stringToHex } from "viem";
+import Link from "next/link";
 import { marketAbi, erc20Abi } from "@/lib/abi";
 import { MARKET, USDC, CUSTODIAN_PUBKEY, usd } from "@/lib/chain";
-import { encryptPackage, hashText } from "@/lib/crypto";
-import { buildBloom, normalizeEntity } from "@/lib/bloom";
-import type { EvidencePackage, ResolverId } from "@/lib/package";
+import { encryptPackage } from "@/lib/crypto";
+import { buildBloom } from "@/lib/bloom";
+import { commitBasket, randomSalt } from "@/lib/merkle";
+import { basketEntities, validTerm } from "@/lib/fca";
+import { binomTail, fmtOdds, sharpness, signalRate, suggestK } from "@/lib/odds";
+import type { BasketItem, EvidencePackage } from "@/lib/package";
 import { Btn, Panel, Rule, TxLink } from "./ui";
-import Link from "next/link";
 
 const input = "glass-input w-full rounded-xl px-3 py-2 text-[13px] outline-none";
-const RES: Record<ResolverId, { label: string; query: string; hint: string }> = {
-  FEDREG: { label: "Federal Register", query: "FR document number, e.g. 2026-18583", hint: "Resolves TRUE when the document is published by the deadline. No key needed." },
-  SAM: { label: "SAM.gov exclusions", query: "Contractor UEI", hint: "Resolves TRUE on an active exclusion/debarment record." },
-  COURTLISTENER: { label: "CourtListener / RECAP", query: "docket id | regex pattern", hint: "Resolves TRUE on a matching docket entry." },
-};
+type Row = { defendant: string; terms: string; court: string; docketId: string; docketNumber: string; entryDate: string; entryText: string; url: string };
+const blank = (): Row => ({ defendant: "", terms: "", court: "", docketId: "", docketNumber: "", entryDate: "", entryText: "", url: "" });
 
 function splitSignal(share: number) {
-  if (share <= 0.15) return "Strong signal: you take almost nothing unless you are right and it goes public. Buyers read this as high confidence.";
-  if (share <= 0.35) return "Confident: most of your payout is contingent on the claim resolving true and public.";
+  if (share <= 0.15) return "Strong signal: you take almost nothing unless enough cases hit and the basket goes public.";
+  if (share <= 0.35) return "Confident: most of your payout is contingent on at least k hitting.";
   if (share <= 0.6) return "Hedged: you are asking buyers to share the risk roughly evenly.";
   return "Weak signal: you want paid now regardless. Expect buyers to discount this listing.";
 }
@@ -28,49 +30,69 @@ export function CommitForm() {
   const { address } = useAccount();
   const pc = usePublicClient();
   const { writeContractAsync } = useWriteContract();
-  const [resolver, setResolver] = useState<ResolverId>("FEDREG");
-  const [text, setText] = useState("");
-  const [query, setQuery] = useState("");
-  const [deadline, setDeadline] = useState(() => new Date(Date.now() + 3 * 86400e3).toISOString().slice(0, 16));
-  const [evidence, setEvidence] = useState("");
-  const [files, setFiles] = useState<{ name: string; b64: string }[]>([]);
-  const [entities, setEntities] = useState("");
-  const [domain, setDomain] = useState("fedreg:");
+  const [rows, setRows] = useState<Row[]>([blank(), blank(), blank()]);
+  const [kPick, setKPick] = useState<number | null>(null);
+  const [days, setDays] = useState(30);
+  const [body, setBody] = useState("");
+  const [analysis, setAnalysis] = useState("");
+  const [domain, setDomain] = useState("fca:federal");
   const [total, setTotal] = useState(1.78);
   const [share, setShare] = useState(0.1);
   const [bondMult, setBondMult] = useState(7);
-  const [exclDays, setExclDays] = useState(30);
-  const [confidence, setConfidence] = useState(80);
+  const [exclDays, setExclDays] = useState(14);
   const [attest, setAttest] = useState(false);
   const [step, setStep] = useState("");
   const [err, setErr] = useState("");
   const [done, setDone] = useState<{ id: string; tx: string } | null>(null);
 
+  const filled = rows.filter((r) => r.defendant.trim() && r.docketId.trim());
+  const n = filled.length;
+  const pSignal = signalRate(days);
+  const suggested = n ? suggestK(n, pSignal, 0.6) : 1;
+  const k = Math.min(Math.max(1, kPick ?? suggested), Math.max(1, n));
+  const confidence = n ? binomTail(n, k, pSignal) : 0;
+  const s = sharpness(Math.max(n, 1), k, days);
+  const deadlineMs = Date.now() + days * 86400e3;
+  const deadlineLabel = new Date(deadlineMs).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const teaserBody = body || `sealed federal fraud cases will produce a DOJ settlement release by ${deadlineLabel}`;
+
   const upfront = BigInt(Math.round(total * share * 1e6));
   const contingent = BigInt(Math.round(total * 1e6)) - upfront;
   const bond = BigInt(Math.round(Number(upfront) * bondMult));
   const exclEnd = Date.now() + exclDays * 86400e3;
-  const deadlineMs = new Date(deadline).getTime();
   const willAutoRelease = exclEnd <= deadlineMs;
-  const entityList = useMemo(() => entities.split(",").map((s) => s.trim()).filter(Boolean).map(normalizeEntity), [entities]);
+  const badTerms = useMemo(() => filled.flatMap((r) => r.terms.split(",").map((t) => t.trim()).filter((t) => t && !validTerm(t))), [filled]);
+
+  const set = (i: number, key: keyof Row, v: string) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [key]: v } : r)));
 
   const submit = async () => {
     setErr("");
     try {
-      if (!text || !query) throw new Error("claim text and resolver query are required");
+      if (n < 1) throw new Error("add at least one case (defendant and CourtListener docket id)");
       if (!attest) throw new Error("the attestation is required");
-      const q = resolver === "FEDREG" ? { kind: "fedreg.published" as const, documentNumber: query.trim() }
-        : resolver === "SAM" ? { kind: "sam.exclusion" as const, uei: query.trim() }
-        : { kind: "courtlistener.docket" as const, docketId: query.split("|")[0].trim(), pattern: (query.split("|")[1] ?? "").trim() };
+      const items: BasketItem[] = filled.map((r) => ({
+        defendant: r.defendant.trim(),
+        matchTerms: r.terms.split(",").map((t) => t.trim()).filter(validTerm),
+        court: r.court.trim(),
+        docketId: Number(r.docketId),
+        docketNumber: r.docketNumber.trim(),
+        entryDate: r.entryDate,
+        entryText: r.entryText.trim(),
+        courtlistenerURL: r.url.trim() || `https://www.courtlistener.com/docket/${r.docketId.trim()}/`,
+        salt: randomSalt(),
+      }));
+      if (items.some((it) => !it.matchTerms.length)) throw new Error("every case needs at least one valid match term (6+ letters, not generic)");
       const pkg: EvidencePackage = {
-        version: 1,
-        claim: { text, resolver, query: q, deadline: new Date(deadline).toISOString() },
-        entities: entityList,
-        sources: files.map((f) => ({ title: f.name, url: `data:application/octet-stream;base64,${f.b64}`, retrievedAt: new Date().toISOString() })),
-        analysis: evidence,
-        seller: { agent: "verity-web", version: "0.1.0" },
+        version: 2,
+        claim: { teaser: `${k} of ${n} ${teaserBody}`, teaserBody, n, k, resolver: "DOJ_FCA", deadline: new Date(deadlineMs).toISOString() },
+        items,
+        entities: basketEntities(items),
+        sources: items.map((it) => ({ title: `${it.defendant} · ${it.docketNumber}`, url: it.courtlistenerURL, retrievedAt: new Date().toISOString() })),
+        analysis,
+        seller: { agent: "verity-web", version: "0.2.0" },
       };
-      setStep("encrypting evidence in your browser (AES-256-GCM)");
+      const { root } = commitBasket(items);
+      setStep("encrypting the basket in your browser (AES-256-GCM)");
       const { envelopeJson, payloadHash } = await encryptPackage(JSON.stringify(pkg), CUSTODIAN_PUBKEY);
       setStep("storing ciphertext");
       const st = await (await fetch("/api/payload", { method: "POST", body: envelopeJson })).json();
@@ -84,19 +106,22 @@ export function CommitForm() {
       }
       const attestation = await pc!.readContract({ address: MARKET, abi: marketAbi, functionName: "ATTESTATION" });
       const params = {
-        claimHash: hashText(text),
+        n,
+        k,
+        itemsRoot: root,
+        teaserBody,
         payloadHash,
-        resolverId: stringToHex(resolver, { size: 32 }),
+        resolverId: stringToHex("DOJ_FCA", { size: 32 }),
         deadline: BigInt(Math.floor(deadlineMs / 1000)),
         exclusivitySeconds: BigInt(Math.round(exclDays * 86400)),
         upfront,
         contingent,
         bond,
-        confidenceBps: confidence * 100,
+        confidenceBps: Math.round(confidence * 10_000),
         domain: stringToHex(domain.slice(0, 31), { size: 32 }),
         attestation,
         payloadURI: st.uri,
-        bloom: buildBloom(entityList),
+        bloom: buildBloom(pkg.entities),
       };
       const { result } = await pc!.simulateContract({ account: address, address: MARKET, abi: marketAbi, functionName: "commit", args: [params] });
       setStep("confirm the commit in your wallet — your bond transfers in");
@@ -114,8 +139,8 @@ export function CommitForm() {
   if (done)
     return (
       <Panel tone="gold">
-        <Rule left={`claim #${done.id} committed`} right={<TxLink hash={done.tx} />} />
-        <p className="mt-3 text-[13px]">The record is permanent: you knew this, now. Your package opens to everyone on {new Date(exclEnd).toUTCString()}.</p>
+        <Rule left={`basket #${done.id} committed`} right={<TxLink hash={done.tx} />} />
+        <p className="mt-3 text-[13px]">The record is permanent: you named these cases, now. Your basket opens to everyone on {new Date(exclEnd).toUTCString()}.</p>
         <Link href={`/claim/${done.id}`} className="mt-3 inline-block text-[13px] font-medium text-gold hover:underline">View listing →</Link>
       </Panel>
     );
@@ -124,55 +149,74 @@ export function CommitForm() {
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-5">
         <Panel>
-          <Rule left="1 · the claim" right="sealed" />
-          <textarea className={`${input} mt-3 h-24`} placeholder="Contractor X's program will appear in a DoD IG report, DOJ settlement, or SAM.gov debarment…" value={text} onChange={(e) => setText(e.target.value)} />
-          <p className="mt-1 text-[11px] text-muted-foreground">Only keccak256(text) goes on chain. Name, in advance, the institution that could prove you wrong.</p>
-        </Panel>
-
-        <Panel>
-          <Rule left="2 · resolver" right="whitelist" />
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(Object.keys(RES) as ResolverId[]).map((r) => (
-              <button key={r} onClick={() => setResolver(r)} className={`glass-press rounded-full px-3 py-1 text-[12px] font-medium ${resolver === r ? "glass-gold text-gold" : "glass text-muted-foreground hover:text-gold"}`}>
-                {RES[r].label}
-              </button>
+          <Rule left="1 · the basket" right={`${n} sealed · salted · merklized`} />
+          <p className="mt-2 text-[12px] text-muted-foreground">
+            One row per sealed False Claims Act case, cited to a CourtListener docket entry. A fake citation is fabrication: 100% of your bond.
+            Match terms must name the defendant (6+ letters, not a sector or place).
+          </p>
+          <div className="mt-3 space-y-3">
+            {rows.map((r, i) => (
+              <div key={i} className="grid gap-2 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-6">
+                <input className={`${input} sm:col-span-3`} placeholder="Defendant, e.g. Lockheed Martin Corporation" value={r.defendant} onChange={(e) => set(i, "defendant", e.target.value)} />
+                <input className={`${input} sm:col-span-3`} placeholder="Match terms, e.g. Lockheed" value={r.terms} onChange={(e) => set(i, "terms", e.target.value)} />
+                <input className={`${input} sm:col-span-2`} placeholder="Court" value={r.court} onChange={(e) => set(i, "court", e.target.value)} />
+                <input className={input} placeholder="Docket id" value={r.docketId} onChange={(e) => set(i, "docketId", e.target.value)} />
+                <input className={input} placeholder="1:24-cv-00148" value={r.docketNumber} onChange={(e) => set(i, "docketNumber", e.target.value)} />
+                <input type="date" className={`${input} sm:col-span-2`} value={r.entryDate} onChange={(e) => set(i, "entryDate", e.target.value)} />
+                <input className={`${input} sm:col-span-4`} placeholder="Cited entry text (notice of election to intervene for purposes of settlement…)" value={r.entryText} onChange={(e) => set(i, "entryText", e.target.value)} />
+                <input className={`${input} sm:col-span-2`} placeholder="CourtListener URL" value={r.url} onChange={(e) => set(i, "url", e.target.value)} />
+              </div>
             ))}
           </div>
-          <input className={`${input} mt-3`} placeholder={RES[resolver].query} value={query} onChange={(e) => setQuery(e.target.value)} />
-          <p className="mt-1 text-[11px] text-muted-foreground">{RES[resolver].hint} Claims resolvable by the buyer&apos;s own publication are not accepted.</p>
-          <label className="mt-3 grid gap-1">
-            <span className="label">deadline</span>
-            <input type="datetime-local" className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-          </label>
+          <div className="mt-3 flex gap-2">
+            <Btn onClick={() => setRows((rs) => [...rs, blank()])} disabled={rows.length >= 64}>+ add case</Btn>
+            {rows.length > 1 && <Btn onClick={() => setRows((rs) => rs.slice(0, -1))}>remove last</Btn>}
+          </div>
+          {badTerms.length > 0 && <p className="mt-2 text-[12px] text-danger">Ignored as too generic: {badTerms.join(", ")}</p>}
         </Panel>
 
         <Panel>
-          <Rule left="3 · evidence" right="encrypted before upload" />
-          <textarea className={`${input} mt-3 h-32`} placeholder="Your analysis and evidence trail. Cite the records." value={evidence} onChange={(e) => setEvidence(e.target.value)} />
-          <input
-            type="file"
-            multiple
-            className="mt-2 text-[12px] text-gold-dim file:mr-3 file:rounded-full file:border file:border-white/15 file:bg-white/10 file:px-3 file:py-1 file:text-[12px] file:text-gold-dim"
-            onChange={async (e) => {
-              const out: { name: string; b64: string }[] = [];
-              for (const f of Array.from(e.target.files ?? [])) {
-                const u = new Uint8Array(await f.arrayBuffer());
-                let s = "";
-                for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
-                out.push({ name: f.name, b64: btoa(s) });
-              }
-              setFiles(out);
-            }}
-          />
+          <Rule left="2 · the public claim" right="resolves via justice.gov" />
           <label className="mt-3 grid gap-1">
-            <span className="label">entities (for the relevance preview)</span>
-            <input className={input} placeholder="agency:defense-department, cage:1abc2, fips:06075" value={entities} onChange={(e) => setEntities(e.target.value)} />
+            <span className="label">claim · at least k of {n || "n"}</span>
+            <input type="range" min={1} max={Math.max(1, n)} value={k} onChange={(e) => setKPick(Number(e.target.value))} />
           </label>
-          <p className="mt-1 text-[11px] text-muted-foreground">Published as a Bloom filter. Buyers learn how many of their entities overlap, not which.</p>
+          <div className="mt-2 flex items-stretch overflow-hidden rounded-xl">
+            <span className="glass-gold flex items-center px-3 text-[13px] font-semibold text-gold" title="Written by the contract">
+              🔒 {k} of {n || "n"}
+            </span>
+            <input className={`${input} rounded-l-none`} placeholder={teaserBody} value={body} maxLength={240} onChange={(e) => setBody(e.target.value)} />
+          </div>
+          <label className="mt-3 grid gap-1">
+            <span className="label">deadline · {days} days ({deadlineLabel})</span>
+            <input type="range" min={7} max={120} value={days} onChange={(e) => setDays(Number(e.target.value))} />
+          </label>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            {[
+              ["Expected by chance", s.expected.toFixed(1)],
+              ["Random-basket odds", fmtOdds(s.randomOdds)],
+              ["At the signal rate", fmtOdds(confidence)],
+            ].map(([a, b]) => (
+              <div key={a} className="rounded-2xl bg-white/[0.03] px-2 py-2">
+                <div className="text-[11px] text-muted-foreground">{a}</div>
+                <div className="text-[16px] font-semibold">{b}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Suggested k = {suggested}: the largest k with at least 60% odds at the backtested {(pSignal * 100).toFixed(1)}% per-item rate. Your stated confidence is
+            that probability; it feeds your Brier score.
+          </p>
+        </Panel>
+
+        <Panel>
+          <Rule left="3 · analysis" right="encrypted before upload" />
+          <textarea className={`${input} mt-3 h-28`} placeholder="Why these cases. Cite the records." value={analysis} onChange={(e) => setAnalysis(e.target.value)} />
           <label className="mt-3 grid gap-1">
             <span className="label">domain tag</span>
             <input className={input} value={domain} onChange={(e) => setDomain(e.target.value)} />
           </label>
+          <p className="mt-1 text-[11px] text-muted-foreground">Match terms and courts are published as a Bloom filter. Buyers learn how many of their watchlist names overlap, not which.</p>
         </Panel>
       </div>
 
@@ -195,13 +239,7 @@ export function CommitForm() {
             <input type="range" min={1} max={20} step={1} value={bondMult} onChange={(e) => setBondMult(Number(e.target.value))} />
           </label>
           <div className="mt-1 text-[13px]">{usd(bond)} staked</div>
-          <p className="mt-1 text-[11px] text-muted-foreground">If false you lose {usd(bond / 2n)}. If fabricated you lose all {usd(bond)}.</p>
-
-          <label className="mt-4 grid gap-1">
-            <span className="label">your confidence · {confidence}%</span>
-            <input type="range" min={50} max={99} value={confidence} onChange={(e) => setConfidence(Number(e.target.value))} />
-          </label>
-          <p className="mt-1 text-[11px] text-muted-foreground">Scored against the outcome. This is your Brier record.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Fewer than {k} hit: you lose {usd(bond / 2n)}. Fabricated citation: you lose all {usd(bond)}.</p>
         </Panel>
 
         <Panel>
@@ -212,7 +250,7 @@ export function CommitForm() {
           </label>
           <p className={`mt-2 text-[12px] ${willAutoRelease ? "text-gold" : "text-danger"}`}>
             {willAutoRelease
-              ? "Opens before the deadline: publication is guaranteed, so a true claim pays your contingent."
+              ? "Opens before the deadline: publication is guaranteed, so a true basket pays your contingent."
               : "Opens after the deadline: if the buyer sits on it, your contingent goes to the public-goods pool, not to you and not back to them."}
           </p>
         </Panel>

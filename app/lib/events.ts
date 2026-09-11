@@ -89,7 +89,10 @@ async function scanEvents(): Promise<FeedEvent[]> {
 export type CommittedArgs = {
   claimId: bigint;
   seller: Address;
-  claimHash: Hex;
+  n: number;
+  k: number;
+  itemsRoot: Hex;
+  teaser: string;
   payloadHash: Hex;
   resolverId: Hex;
   domain: Hex;
@@ -112,7 +115,10 @@ export async function getCommitted(claimId: bigint): Promise<(CommittedArgs & { 
   return {
     claimId,
     seller: a.seller as Address,
-    claimHash: a.claimHash as Hex,
+    n: Number(a.n),
+    k: Number(a.k),
+    itemsRoot: a.itemsRoot as Hex,
+    teaser: a.teaser as string,
     payloadHash: a.payloadHash as Hex,
     resolverId: a.resolverId as Hex,
     domain: a.domain as Hex,

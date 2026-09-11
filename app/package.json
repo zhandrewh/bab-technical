@@ -9,11 +9,13 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "demo": "tsx scripts/demo.ts",
-    "seller": "tsx scripts/seller-fedreg.ts",
-    "buyer": "tsx scripts/buyer-newsroom.ts",
+    "buyer": "tsx scripts/buyer-vendorrisk.ts",
     "oracle": "tsx scripts/oracle.ts",
     "fabricator": "tsx scripts/fabricator.ts",
-    "fund": "tsx scripts/fund.ts"
+    "fund": "tsx scripts/fund.ts",
+    "abi": "node scripts/gen-abi.mjs",
+    "seller": "tsx scripts/seller-fca.ts",
+    "test": "tsx --test lib/*.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",

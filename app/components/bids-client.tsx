@@ -28,8 +28,8 @@ export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: {
   const pc = usePublicClient();
   const router = useRouter();
   const { writeContractAsync } = useWriteContract();
-  const [criteria, setCriteria] = useState("Any resolvable claim touching HHS contracting");
-  const [domain, setDomain] = useState("fedreg:hhs");
+  const [criteria, setCriteria] = useState("Any FCA basket touching defense contractors, random-basket odds under 5%");
+  const [domain, setDomain] = useState("fca:defense");
   const [resolver, setResolver] = useState("");
   const [amount, setAmount] = useState(2);
   const [maxBrier, setMaxBrier] = useState(0.2);
@@ -119,7 +119,7 @@ export function BidsClient({ bids, openClaims }: { bids: BidRow[]; openClaims: {
             <span className="label">resolver</span>
             <select className={input} value={resolver} onChange={(e) => setResolver(e.target.value)}>
               <option value="">any</option>
-              <option>FEDREG</option><option>SAM</option><option>COURTLISTENER</option>
+              <option>DOJ_FCA</option>
             </select>
           </label>
           <label className="grid gap-1"><span className="label">escrow (usdc)</span><input type="number" step="0.01" className={input} value={amount} onChange={(e) => setAmount(Number(e.target.value))} /></label>
