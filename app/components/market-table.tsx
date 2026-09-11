@@ -6,7 +6,7 @@ import { usd } from "@/lib/chain";
 import { fmtLift, fmtOdds } from "@/lib/odds";
 import { Tag, outcomeTone } from "./ui";
 
-const inputCls = "glass-input rounded-xl px-3 py-1.5 text-[13px] outline-none";
+const inputCls = "field rounded px-3 py-1.5 text-[13px] outline-none";
 const until = (ts: number) => {
   const s = ts - Date.now() / 1000;
   if (s <= 0) return "passed";
@@ -70,7 +70,7 @@ export function MarketTable({ claims }: { claims: ClaimView[] }) {
         </label>
       </div>
 
-      <div className="glass bab-scroll overflow-x-auto rounded-3xl">
+      <div className="surface bab-scroll overflow-x-auto rounded-md">
         <table className="w-full min-w-[980px] text-[13px]">
           <thead>
             <tr className="border-b border-border text-left">

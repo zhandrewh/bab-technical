@@ -5,7 +5,7 @@ import { loadMarket } from "@/lib/claims";
 import { buildLedger, fmtUsd } from "@/lib/ledger";
 import { MARKET, BIDS, addrUrl } from "@/lib/chain";
 import { LedgerGraph } from "@/components/ledger-graph";
-import { Rule, ErrorNote } from "@/components/ui";
+import { Rule, Stats, ErrorNote } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -61,15 +61,7 @@ export default async function LedgerPage() {
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {tiles.map(([k, v, hint]) => (
-          <div key={k} className="glass rounded-2xl px-4 py-3">
-            <div className="text-[11px] text-muted-foreground">{k}</div>
-            <div className={`mt-0.5 text-[18px] font-semibold ${k === "To public-goods pool" || k === "Returned to buyers" ? "text-foreground" : "text-foreground"}`}>{v}</div>
-            {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
-          </div>
-        ))}
-      </div>
+      <Stats big items={tiles} />
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5"><span className="inline-block size-2.5 rounded-full border-2 border-gold" /> commit, proposal, publication</span>

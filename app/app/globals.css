@@ -107,110 +107,40 @@ body {
   }
 }
 
-/* ---------- Liquid glass ----------
-   Frosted fill; a specular rim drawn as a masked gradient border (bright top-left, glint bottom-right);
-   a sheen that follows the pointer (--mx/--my set by GlassPointer) and otherwise sits still; springy press. */
+/* ---------- Surfaces ----------
+   Flat and opaque: a 1px border does the separating, so the background never shows through content. Radii are small
+   and come in two steps (rounded-md for containers, rounded for controls). One raised surface per page, for the action. */
 
-.glass,
-.glass-gold,
-.glass-danger,
-.glass-input {
-  position: relative;
-  isolation: isolate;
-  border: 0;
-  /* Kept cheap: the background rotates, so this re-runs every frame for every glass box on screen. Blur cost grows
-     with radius, and saturate() would add a second full filter pass. */
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
-.glass {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.008) 45%, rgba(255, 255, 255, 0.02));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 0 24px rgba(255, 255, 255, 0.025),
-    0 10px 30px rgba(0, 0, 0, 0.22);
+.surface-gold {
+  background: color-mix(in srgb, var(--gold) 4%, var(--surface));
+  border: 1px solid var(--gold-faint);
 }
-.glass-gold {
-  background: linear-gradient(160deg, color-mix(in srgb, var(--gold) 9%, transparent), rgba(255, 255, 255, 0.008) 50%, color-mix(in srgb, var(--gold) 3%, transparent));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 45%, transparent),
-    inset 0 0 28px color-mix(in srgb, var(--gold) 6%, transparent),
-    0 10px 30px rgba(0, 0, 0, 0.22);
+.surface-danger {
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
 }
-.glass-danger {
-  background: linear-gradient(160deg, color-mix(in srgb, var(--danger) 9%, transparent), rgba(255, 255, 255, 0.008) 55%);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--danger) 45%, transparent),
-    0 10px 30px rgba(0, 0, 0, 0.22);
+.surface-raised {
+  background: var(--popover);
+  border: 1px solid var(--gold-dim);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
-.glass-input {
-  background: rgba(0, 0, 0, 0.16);
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  transition: box-shadow 0.25s;
+.field {
+  background: var(--background);
+  border: 1px solid var(--input);
+  transition: border-color 0.15s;
 }
-.glass-input:focus {
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.5),
-    0 0 0 3px color-mix(in srgb, var(--gold) 18%, transparent);
+.field:focus {
+  border-color: var(--gold-dim);
 }
-
-/* Specular rim. */
-.glass::before,
-.glass-gold::before,
-.glass-danger::before,
-.glass-input::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: linear-gradient(140deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0.03) 55%, rgba(255, 255, 255, 0.28) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+.fill-gold {
+  background: var(--gold);
 }
-.glass-gold::before {
-  background: linear-gradient(140deg, color-mix(in srgb, var(--gold) 85%, white), color-mix(in srgb, var(--gold) 25%, transparent) 30%, rgba(255, 255, 255, 0.04) 58%, color-mix(in srgb, var(--gold) 55%, transparent));
-}
-.glass-danger::before {
-  background: linear-gradient(140deg, color-mix(in srgb, var(--danger) 80%, white), color-mix(in srgb, var(--danger) 20%, transparent) 35%, color-mix(in srgb, var(--danger) 45%, transparent));
-}
-.glass-input::before {
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.16));
-}
-
-/* Pointer sheen, painted under content (z -1 inside the isolated box). */
-.glass::after,
-.glass-gold::after,
-.glass-danger::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at var(--mx, 20%) var(--my, 0%), rgba(255, 255, 255, 0.11), transparent 55%);
-  transition: opacity 0.3s;
-}
-.glass-gold::after {
-  background: radial-gradient(120% 90% at var(--mx, 20%) var(--my, 0%), color-mix(in srgb, var(--gold) 20%, transparent), transparent 55%);
-}
-
-/* Solid gold glass for primary actions: a liquid drop of the brand colour. */
-.glass-solid {
-  position: relative;
-  isolation: isolate;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 92%, white), var(--gold) 45%, color-mix(in srgb, var(--gold) 80%, #6b4a00));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    inset 0 -2px 4px rgba(120, 70, 0, 0.35),
-    0 6px 20px color-mix(in srgb, var(--gold) 28%, transparent);
+.fill-gold:hover {
+  background: color-mix(in srgb, var(--gold) 88%, white);
 }
 
 /* Liquid press: buttons and pills bulge on hover and squish on press with a spring. */

@@ -6,24 +6,19 @@ import { loadMarket } from "@/lib/claims";
 import type { FeedEvent } from "@/lib/events";
 import { MARKET, BIDS, addrUrl, usd } from "@/lib/chain";
 import { AgentHandshake } from "@/components/agent-handshake";
-import { Rule, Panel, TxLink, btnBase, btnVariant } from "@/components/ui";
+import { Rule, Panel, Stats, TxLink, btnBase, btnVariant } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 const Code = ({ children, title }: { children: string; title?: string }) => (
-  <div className="glass overflow-hidden rounded-3xl">
-    <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2.5 text-[11px] text-muted-foreground">
-      <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-      <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-      <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-      {title && <span className="ml-2 font-mono">{title}</span>}
-    </div>
+  <div className="surface overflow-hidden rounded-md">
+    {title && <div className="border-b border-border px-4 py-2 font-mono text-[11px] text-muted-foreground">{title}</div>}
     <pre className="bab-scroll overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-foreground/90">{children}</pre>
   </div>
 );
 
 const Mono = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded-md bg-white/[0.07] px-1.5 py-0.5 font-mono text-[12px] text-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">{children}</code>
+  <code className="rounded-sm bg-white/[0.06] px-1 py-0.5 font-mono text-[12px] text-gold">{children}</code>
 );
 
 const OUT = ["NONE", "TRUE", "FALSE", "FABRICATED"];
@@ -73,24 +68,21 @@ export default async function AgentsPage() {
             human. The sellers and the oracle are programs too.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
-          {[
+        <Stats
+          big
+          cols="grid-cols-3 lg:grid-cols-1"
+          items={[
             ["x402 purchases", String(x402.length)],
             ["oracle actions", String(oracle.length)],
             ["baskets sealed", `${commits.length}`],
-          ].map(([k, v]) => (
-            <div key={k} className="glass rounded-2xl px-4 py-3">
-              <div className="text-[11px] text-muted-foreground">{k}</div>
-              <div className="mt-0.5 text-[20px] font-semibold text-foreground">{v}</div>
-            </div>
-          ))}
-        </div>
+          ]}
+        />
       </header>
 
       <section className="space-y-4">
         <Rule left="agents on the ledger now" right={<Link href="/ledger" className="hover:text-gold">full ledger →</Link>} />
         {activity.length ? (
-          <ul className="glass divide-y divide-white/[0.06] overflow-hidden rounded-3xl">
+          <ul className="surface divide-y divide-white/[0.06] overflow-hidden rounded-md">
             {activity.map((e) => (
               <li key={`${e.tx}:${e.logIndex}`} className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-[13px]">
                 <span className="min-w-0 truncate text-foreground/90">{line(e)}</span>
@@ -101,7 +93,7 @@ export default async function AgentsPage() {
             ))}
           </ul>
         ) : (
-          <p className="glass rounded-3xl px-5 py-6 text-[13px] text-muted-foreground">
+          <p className="surface rounded-md px-5 py-6 text-[13px] text-muted-foreground">
             No agent activity indexed yet. Run <Mono>npm run demo</Mono> against this deployment and it will fill in within a block.
           </p>
         )}
@@ -146,7 +138,7 @@ export default async function AgentsPage() {
               point: "Anyone can run one. A wrong proposal can be disputed by anyone with a matching bond.",
             },
           ].map((r) => (
-            <Panel key={r.role} className="flex flex-col">
+            <div key={r.role} className="flex flex-col border-t border-border pt-4">
               <div className="text-[15px] font-medium text-foreground">{r.role}</div>
               <div className="mt-1 font-mono text-[11px] text-gold-dim">{r.file}</div>
               <p className="mt-3 text-[13px] leading-relaxed text-foreground/85">{r.does}</p>
@@ -154,7 +146,7 @@ export default async function AgentsPage() {
               <div className="mt-auto pt-4">
                 <Mono>{r.cmd}</Mono>
               </div>
-            </Panel>
+            </div>
           ))}
         </div>
       </section>
@@ -180,7 +172,7 @@ const { key } = await (await fetch(pick.key, {
 
       <section className="space-y-4">
         <Rule left="endpoints" />
-        <div className="glass bab-scroll overflow-x-auto rounded-3xl">
+        <div className="surface bab-scroll overflow-x-auto rounded-md">
           <table className="w-full min-w-[720px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left text-[12px] text-muted-foreground">

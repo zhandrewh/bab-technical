@@ -65,7 +65,7 @@ export function HowFlow({ steps }: { steps: Step[] }) {
             <div className="text-[12px] font-medium text-gold">{s.label}</div>
             <h2 className="mt-1 font-serif text-[30px] leading-tight text-foreground sm:text-[34px]">{s.heading}</h2>
             <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-foreground/85">{s.body}</div>
-            {s.example && <div className="glass mt-5 rounded-2xl px-4 py-3 text-[13px] leading-relaxed text-foreground/80">{s.example}</div>}
+            {s.example && <div className="mt-5 border-l-2 border-gold-faint pl-4 text-[13px] leading-relaxed text-foreground/80">{s.example}</div>}
           </section>
         ))}
 

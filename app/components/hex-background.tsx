@@ -3,6 +3,7 @@
 // 78x78 canvas (no cross-origin image, so no tainted-canvas failure), then bucketed by luminance x alpha so lit and
 // shaded faces land in different gold shades and the 3D form survives in text. The digits are fixed; only the CSS
 // rotation moves.
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 const N = 78;
@@ -60,6 +61,7 @@ function shadeGrid(): Uint8Array {
 
 export function HexBackground() {
   const ref = useRef<HTMLCanvasElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const cv = ref.current;
@@ -129,7 +131,16 @@ export function HexBackground() {
       <canvas
         ref={ref}
         className="bab-spin absolute left-1/2 top-1/2"
-        style={{ ["--s" as string]: "min(88vh, 88vw)", width: "var(--s)", aspectRatio: "1", margin: "calc(var(--s) / -2) 0 0 calc(var(--s) / -2)", opacity: 0.62, willChange: "transform" }}
+        style={{
+          ["--s" as string]: "min(88vh, 88vw)",
+          width: "var(--s)",
+          aspectRatio: "1",
+          margin: "calc(var(--s) / -2) 0 0 calc(var(--s) / -2)",
+          // Fainter behind the how-it-works diagram so the flow reads over it.
+          opacity: pathname?.startsWith("/how") ? 0.25 : 0.62,
+          transition: "opacity 0.6s",
+          willChange: "transform",
+        }}
       />
       {/* Static layer, so its CSS mask is rasterised once; the canvas bakes the same vignette itself. */}
       <div

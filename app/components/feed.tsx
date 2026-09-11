@@ -108,14 +108,14 @@ export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: F
   return (
     <div>
       {rows.length === 0 && <div className="py-6 text-[13px] text-muted-foreground">No transactions yet. The first commit will appear here within one block.</div>}
-      <ul className="glass divide-y divide-white/[0.06] overflow-hidden rounded-3xl">
+      <ul className="surface divide-y divide-border overflow-hidden rounded-md">
         {rows.map((e) => {
           const d = describe(e);
           const k = `${e.tx}:${e.logIndex}`;
           if (compact)
             return (
               <li key={k} className={`grid grid-cols-[5.5rem_1fr_auto] items-center gap-3 px-4 py-3 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
-                <span className={`w-fit rounded-full bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
+                <span className={`w-fit rounded bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
                 <span className="min-w-0 truncate text-foreground/90">{d.text}</span>
                 <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>{ago(e.ts)} ago</span>
               </li>
@@ -123,7 +123,7 @@ export function LiveFeed({ initial, limit = 60, claimId, compact }: { initial: F
           return (
             <li key={k} className={`grid grid-cols-[3rem_5.5rem_1fr_auto] items-center gap-3 px-4 py-2.5 text-[13px] ${fresh.has(k) ? "feed-new" : ""}`}>
               <span className="text-[12px] text-muted-foreground">{ago(e.ts)}</span>
-              <span className={`w-fit rounded-full bg-white/[0.07] px-2 py-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
+              <span className={`w-fit rounded bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${d.tone}`}>{d.tag}</span>
               <span className="min-w-0 text-foreground/90">{d.text}</span>
               <span className="text-[11px]">
                 <TxLink hash={e.tx} />

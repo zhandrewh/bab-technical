@@ -7,7 +7,7 @@ import { usd, addrUrl } from "@/lib/chain";
 import { fetchEnvelopeJson } from "@/lib/storage";
 import { BASELINE, binomTail, fmtLift, fmtOdds, signalRate } from "@/lib/odds";
 import type { BasketEvidence } from "@/lib/package";
-import { Rule, Field, Panel, Tag, TxLink, Addr, brierText, outcomeTone } from "@/components/ui";
+import { Rule, Field, Panel, Stats, Tag, TxLink, Addr, brierText, outcomeTone } from "@/components/ui";
 import { PurchasePanel } from "@/components/purchase-panel";
 import { LiveFeed } from "@/components/feed";
 import { SettlementTable } from "@/components/settlement-table";
@@ -62,22 +62,20 @@ export default async function ClaimPage({ params }: { params: Promise<{ id: stri
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           {/* Sharpness first: the count is only worth paying for if a random basket would not make it. */}
-          <Panel tone="gold">
+          <Panel>
             <Rule left="how sharp is this claim" right={`base rates · n=${BASELINE.control.n} / ${BASELINE.treatment.n}`} />
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                ["Claimed", `${c.k} of ${c.n}`],
-                ["Expected by chance", c.expected.toFixed(1)],
-                ["Random-basket odds", fmtOdds(c.randomOdds)],
-                ["Seller lift", c.sellerLift == null ? "no history" : fmtLift(c.sellerLift)],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded-2xl bg-white/[0.03] px-3 py-2.5">
-                  <div className="text-[11px] text-muted-foreground">{k}</div>
-                  <div className="mt-0.5 text-[18px] font-semibold text-foreground">{v}</div>
-                </div>
-              ))}
+            <div className="mt-4">
+              <Stats
+                big
+                items={[
+                  ["Claimed", `${c.k} of ${c.n}`],
+                  ["Expected by chance", c.expected.toFixed(1)],
+                  ["Random-basket odds", fmtOdds(c.randomOdds)],
+                  ["Seller lift", c.sellerLift == null ? "no history" : fmtLift(c.sellerLift)],
+                ]}
+              />
             </div>
-            <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+            <p className="mt-4text-[12px] leading-relaxed text-muted-foreground">
               A random sealed FCA notice (a declined case) drew a DOJ release within this {Math.round(days)}-day window at {(c.p0 * 100).toFixed(1)}% per item in
               the backtest, so {c.n} random cases make this claim {fmtOdds(c.randomOdds)} of the time. Settlement-intervention notices ran at{" "}
               {(signalRate(days) * 100).toFixed(1)}%, which puts this claim at {fmtOdds(signalOdds)}. The seller states {Math.round(c.confidence * 100)}%.

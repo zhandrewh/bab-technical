@@ -15,17 +15,17 @@ export function Rule({ left, right, tone = "gold" }: { left: React.ReactNode; ri
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="glass-gold inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gold">
+    <div className="surface-gold inline-flex items-center gap-2 rounded px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gold">
       {children}
     </div>
   );
 }
 
-export const btnBase = "glass-press inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium disabled:pointer-events-none disabled:opacity-40";
+export const btnBase = "glass-press inline-flex items-center justify-center gap-1.5 rounded px-4 py-2 text-[13px] font-medium disabled:pointer-events-none disabled:opacity-40";
 export const btnVariant = {
-  primary: "glass-solid text-background",
-  danger: "glass-danger text-danger",
-  idle: "glass text-foreground/90 hover:text-gold",
+  primary: "fill-gold text-background",
+  danger: "surface-danger text-danger",
+  idle: "surface text-foreground/90 hover:text-gold",
 } as const;
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof btnVariant };
@@ -67,19 +67,35 @@ export function Field({ k, v, hint }: { k: React.ReactNode; v: React.ReactNode; 
   );
 }
 
-export function Panel({ children, className = "", tone }: { children: React.ReactNode; className?: string; tone?: "danger" | "gold" }) {
-  const t = tone === "danger" ? "glass-danger" : tone === "gold" ? "glass-gold" : "glass";
-  return <div className={`rounded-3xl p-5 ${t} ${className}`}>{children}</div>;
+/** raised: the one surface on a page that carries the action (buying). Use it once. */
+export function Panel({ children, className = "", tone }: { children: React.ReactNode; className?: string; tone?: "danger" | "gold" | "raised" }) {
+  const t = tone === "danger" ? "surface-danger" : tone === "gold" ? "surface-gold" : tone === "raised" ? "surface-raised" : "surface";
+  return <div className={`rounded-md p-5 ${t} ${className}`}>{children}</div>;
+}
+
+/** Figures set as a row of labelled columns divided by hairlines, instead of a box per number. */
+export function Stats({ items, cols = "grid-cols-2 sm:grid-cols-4", big }: { items: [React.ReactNode, React.ReactNode, React.ReactNode?][]; cols?: string; big?: boolean }) {
+  return (
+    <dl className={`grid gap-x-6 gap-y-4 ${cols}`}>
+      {items.map(([k, v, hint], i) => (
+        <div key={i} className="min-w-0 border-l border-border pl-3">
+          <dt className="text-[11px] text-muted-foreground">{k}</dt>
+          <dd className={`mt-0.5 truncate tabular-nums text-foreground ${big ? "text-[18px] font-semibold" : "text-[13px]"}`}>{v}</dd>
+          {hint && <dd className="text-[11px] text-muted-foreground">{hint}</dd>}
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 export function Tag({ children, tone = "dim" }: { children: React.ReactNode; tone?: "dim" | "gold" | "danger" }) {
-  const t = tone === "gold" ? "glass-gold text-gold" : tone === "danger" ? "glass-danger text-danger" : "glass text-muted-foreground";
-  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${t}`}>{children}</span>;
+  const t = tone === "gold" ? "surface-gold text-gold" : tone === "danger" ? "surface-danger text-danger" : "surface text-muted-foreground";
+  return <span className={`inline-block rounded px-2.5 py-0.5 text-[11px] font-medium capitalize ${t}`}>{children}</span>;
 }
 
 export function ErrorNote({ children }: { children: React.ReactNode }) {
   return (
-    <div className="glass-danger rounded-2xl px-4 py-2.5 text-[13px]">
+    <div className="surface-danger rounded px-4 py-2.5 text-[13px]">
       <span className="font-medium text-danger">Error: </span>
       {children}
     </div>
@@ -90,7 +106,7 @@ export function Pending({ children }: { children: React.ReactNode }) {
   return <p className="live text-[12px] text-gold-dim">{children}</p>;
 }
 
-export const inputCls = "glass-input w-full rounded-xl px-3 py-2 text-[13px] outline-none";
+export const inputCls = "field w-full rounded px-3 py-2 text-[13px] outline-none";
 
 export const brierText = (b: number | null) => (b == null ? "—" : b.toFixed(3));
 

@@ -1,12 +1,12 @@
 "use client";
-// Landing browse surface: category chips, a featured market and a card grid. Each card leads with the on-chain teaser
-// ("3 of 12 …") and the number a buyer should compare it with: the odds a random basket would make the same claim.
+// Landing browse surface: category chips, a featured market and a docket-style list. Each row leads with the on-chain
+// teaser ("3 of 12 …") and the number a buyer should compare it with: the odds a random basket would make the same claim.
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClaimView } from "@/lib/claims";
 import { usd } from "@/lib/chain";
 import { fmtLift, fmtOdds } from "@/lib/odds";
-import { Tag, outcomeTone, btnBase, btnVariant } from "./ui";
+import { Stats, Tag, outcomeTone, btnBase, btnVariant } from "./ui";
 
 export const RESOLVERS: Record<string, { name: string; short: string }> = {
   DOJ_FCA: { name: "justice.gov", short: "DOJ" },
@@ -33,14 +33,6 @@ const CHIPS: Chip[] = [
   { key: "replay", label: "Backtest replays", pick: (cs) => cs.filter((c) => c.replay) },
   { key: "settled", label: "Resolved", pick: (cs) => cs.filter((c) => c.status !== "OPEN") },
 ];
-
-function ResolverIcon({ r, big }: { r: string; big?: boolean }) {
-  return (
-    <span className={`glass-gold grid shrink-0 place-items-center rounded-xl font-semibold text-gold ${big ? "size-12 text-[13px]" : "size-9 text-[11px]"}`}>
-      {resolverOf(r).short}
-    </span>
-  );
-}
 
 /** k-of-N at a glance: n dots, the first k ringed (the claim); after settlement, hits are filled. */
 export function KofN({ c, big }: { c: ClaimView; big?: boolean }) {
@@ -80,62 +72,62 @@ function BuyButton({ c, className = "" }: { c: ClaimView; className?: string }) 
   );
 }
 
-function Card({ c }: { c: ClaimView }) {
+// Columns shared by the header and every row, so figures line up down the list like a docket sheet.
+const COLS = "lg:grid-cols-[3rem_minmax(0,1fr)_5.5rem_5.5rem_5rem_6.5rem]";
+
+/** A labelled figure: the label shows on narrow screens, where there is no header row. */
+function Cell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <article className="glass group flex flex-col rounded-3xl p-4 transition-transform duration-300 hover:-translate-y-0.5">
-      <Link href={`/claim/${c.id}`} className="flex items-start gap-3">
-        <ResolverIcon r={c.resolver} />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[11px] text-muted-foreground">{c.domain || "sealed"}</div>
-          <h3 className="mt-0.5 line-clamp-3 text-[14px] font-medium leading-snug text-foreground group-hover:text-gold">{c.teaser}</h3>
+    <div className="min-w-0 lg:text-right">
+      <div className="text-[11px] text-muted-foreground lg:hidden">{label}</div>
+      <div className="tabular-nums">{children}</div>
+    </div>
+  );
+}
+
+function Row({ c }: { c: ClaimView }) {
+  return (
+    <li>
+      <Link href={`/claim/${c.id}`} className={`group grid grid-cols-4 items-start gap-x-4 gap-y-3 px-4 py-4 text-[13px] transition-colors hover:bg-white/[0.025] lg:items-center ${COLS}`}>
+        <span className="hidden text-[12px] tabular-nums text-muted-foreground lg:block">#{c.id}</span>
+        <div className="col-span-4 min-w-0 lg:col-span-1">
+          <div className="text-[14px] font-medium leading-snug text-foreground group-hover:text-gold">{c.teaser}</div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+            <KofN c={c} />
+            <span>expected by chance {c.expected.toFixed(1)}</span>
+            <span>{lift(c)}</span>
+            <span>{c.bondMultiple}× bonded</span>
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[20px] font-semibold leading-none text-gold">{fmtOdds(c.randomOdds)}</div>
-          <div className="mt-1 text-[10px] text-muted-foreground">by chance</div>
-        </div>
+        <Cell label="By chance">
+          <span className="text-[15px] font-semibold text-gold">{fmtOdds(c.randomOdds)}</span>
+        </Cell>
+        <Cell label="Price">
+          <span className="text-foreground">{price(c)}</span>
+        </Cell>
+        <Cell label="Deadline">
+          <span className="text-muted-foreground" suppressHydrationWarning>{until(c.deadline)}</span>
+        </Cell>
+        <Cell label="Status">
+          <StatusTag c={c} />
+        </Cell>
       </Link>
-
-      <div className="mt-4">
-        <KofN c={c} />
-        <div className="mt-1.5 text-[11px] text-muted-foreground">
-          claims {c.k} · expected by chance {c.expected.toFixed(1)} of {c.n}
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
-        <BuyButton c={c} className="flex-1 py-2" />
-        <StatusTag c={c} />
-      </div>
-      <div className="mt-2 text-[11px] text-muted-foreground">
-        {usd(BigInt(c.currentUpfront))} now · {usd(BigInt(c.contingent))} only if it hits and goes public
-      </div>
-
-      <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[11px] text-muted-foreground">
-        <span>{lift(c)}</span>
-        <span>
-          <span className="text-gold-dim">{c.bondMultiple}×</span> bonded
-        </span>
-        <span suppressHydrationWarning>{until(c.deadline)}</span>
-      </div>
-    </article>
+    </li>
   );
 }
 
 function Featured({ c }: { c: ClaimView }) {
   const r = resolverOf(c.resolver);
   return (
-    <article className="glass flex h-full flex-col rounded-3xl p-6">
+    <article className="surface flex h-full flex-col rounded-md p-6">
       <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-gold">
         <span>{c.replay ? "Backtest replay" : "Featured basket"}</span>
       </div>
-      <Link href={`/claim/${c.id}`} className="group mt-4 flex items-start gap-4">
-        <ResolverIcon r={c.resolver} big />
-        <div className="min-w-0">
-          <div className="text-[12px] text-muted-foreground">
-            Sealed basket #{c.id} · {c.domain || "federal fraud"}
-          </div>
-          <h2 className="mt-1 text-[22px] font-semibold leading-tight text-foreground group-hover:text-gold sm:text-[26px]">{c.teaser}</h2>
+      <Link href={`/claim/${c.id}`} className="group mt-4 block">
+        <div className="text-[12px] text-muted-foreground">
+          Sealed basket #{c.id} · {c.domain || "federal fraud"}
         </div>
+        <h2 className="mt-1 text-[22px] font-semibold leading-tight text-foreground group-hover:text-gold sm:text-[26px]">{c.teaser}</h2>
       </Link>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -154,19 +146,16 @@ function Featured({ c }: { c: ClaimView }) {
         <BuyButton c={c} className="px-6 py-3 text-[14px]" />
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          ["Resolves via", r.name],
-          ["Deadline", day(c.deadline)],
-          ["Seller bond", `${usd(BigInt(c.bond))} · ${c.bondMultiple}×`],
-          ["Seller lift", c.sellerLift == null ? "First basket" : `${fmtLift(c.sellerLift)} over ${c.sellerItems} items`],
-        ].map(([k, v]) => (
-          <div key={k} className="rounded-2xl bg-white/[0.03] px-3 py-2.5">
-            <dt className="text-[11px] text-muted-foreground">{k}</dt>
-            <dd className="mt-0.5 truncate text-[13px] text-foreground">{v}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="mt-6 border-t border-border pt-5">
+        <Stats
+          items={[
+            ["Resolves via", r.name],
+            ["Deadline", day(c.deadline)],
+            ["Seller bond", `${usd(BigInt(c.bond))} · ${c.bondMultiple}×`],
+            ["Seller lift", c.sellerLift == null ? "First basket" : `${fmtLift(c.sellerLift)} over ${c.sellerItems} items`],
+          ]}
+        />
+      </div>
       <p className="mt-auto pt-5 text-[12px] leading-relaxed text-muted-foreground">
         You pay {usd(BigInt(c.currentUpfront))} to unlock which cases. The other {usd(BigInt(c.contingent))} sits in escrow and reaches the seller only
         if at least {c.k} hit and the basket goes public. If fewer hit, the seller&apos;s bond is slashed and you&apos;re refunded.
@@ -179,7 +168,7 @@ export function FeaturedClaim({ claims }: { claims: ClaimView[] }) {
   const pick = CHIPS[0].pick(claims)[0] ?? claims[0];
   if (!pick) {
     return (
-      <div className="glass flex h-full flex-col items-start justify-center gap-3 rounded-3xl p-6">
+      <div className="surface flex h-full flex-col items-start justify-center gap-3 rounded-md p-6">
         <div className="text-[22px] font-semibold">No open baskets yet.</div>
         <p className="text-[13px] text-muted-foreground">Reading sealed FCA dockets? Seal a basket on chain and set your price.</p>
         <Link href="/commit" className={`${btnBase} ${btnVariant.primary} px-5 py-2.5`}>
@@ -191,37 +180,87 @@ export function FeaturedClaim({ claims }: { claims: ClaimView[] }) {
   return <Featured c={pick} />;
 }
 
+// One segmented control: the gold thumb slides to whichever chip is picked instead of each chip being its own button.
+function ChipPill({ value, onChange }: { value: string; onChange: (k: string) => void }) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = refs.current[value];
+      if (el) setThumb({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    // Keep the picked chip visible on narrow screens without scrolling the page vertically.
+    const el = refs.current[value];
+    const scroller = scrollRef.current;
+    if (el && scroller) {
+      const pad = 16;
+      if (el.offsetLeft - pad < scroller.scrollLeft) scroller.scrollTo({ left: el.offsetLeft - pad, behavior: "smooth" });
+      else if (el.offsetLeft + el.offsetWidth + pad > scroller.scrollLeft + scroller.clientWidth)
+        scroller.scrollTo({ left: el.offsetLeft + el.offsetWidth + pad - scroller.clientWidth, behavior: "smooth" });
+    }
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [value]);
+
+  return (
+    <div ref={scrollRef} className="bab-scroll -mx-1 overflow-x-auto px-1 pb-1">
+      <div role="tablist" className="surface relative flex w-max rounded-md p-1">
+        {thumb && (
+          <span
+            aria-hidden
+            className="fill-gold pointer-events-none rounded transition-[left,width] duration-500 ease-[cubic-bezier(0.34,1.3,0.64,1)] motion-reduce:transition-none"
+            style={{ position: "absolute", top: 4, bottom: 4, left: thumb.left, width: thumb.width }}
+          />
+        )}
+        {CHIPS.map((c) => (
+          <button
+            key={c.key}
+            ref={(el) => {
+              refs.current[c.key] = el;
+            }}
+            role="tab"
+            aria-selected={value === c.key}
+            onClick={() => onChange(c.key)}
+            className={`relative z-10 shrink-0 rounded px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-300 ${value === c.key ? "text-background" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function MarketCards({ claims, limit = 9 }: { claims: ClaimView[]; limit?: number }) {
   const [chip, setChip] = useState(CHIPS[0].key);
   const rows = useMemo(() => (CHIPS.find((c) => c.key === chip) ?? CHIPS[0]).pick(claims), [chip, claims]);
 
   return (
     <div className="space-y-5">
-      <div className="bab-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {CHIPS.map((c) => (
-          <button
-            key={c.key}
-            onClick={() => setChip(c.key)}
-            className={`glass-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium ${chip === c.key ? "glass-solid text-background" : "glass text-muted-foreground hover:text-foreground"}`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      <ChipPill value={chip} onChange={setChip} />
 
       {rows.length === 0 ? (
-        <div className="glass rounded-3xl px-6 py-10 text-center text-[13px] text-muted-foreground">
-          Nothing here yet.{" "}
-          <Link href="/bids" className="text-gold hover:underline">
-            Post a standing bid
-          </Link>{" "}
-          and sellers will come to you.
+        <div className="surface rounded-md px-6 py-10 text-center text-[13px] text-muted-foreground">
+          Nothing here yet.
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.slice(0, limit).map((c) => (
-            <Card key={c.id} c={c} />
-          ))}
+        <div className="surface overflow-hidden rounded-md">
+          <div className={`hidden gap-x-4 border-b border-border px-4 py-2.5 text-[11px] text-muted-foreground lg:grid ${COLS}`}>
+            <span>No.</span>
+            <span>Claim</span>
+            <span className="text-right">By chance</span>
+            <span className="text-right">Price</span>
+            <span className="text-right">Deadline</span>
+            <span className="text-right">Status</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {rows.slice(0, limit).map((c) => (
+              <Row key={c.id} c={c} />
+            ))}
+          </ul>
         </div>
       )}
       {rows.length > limit && (

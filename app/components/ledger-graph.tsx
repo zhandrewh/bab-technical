@@ -57,7 +57,7 @@ export function LedgerGraph({ rows, spans, lanes }: { rows: LedgerNode[]; spans:
   const activeLens = LENSES.find((l) => l.id === lens);
 
   if (!rows.length)
-    return <div className="glass rounded-3xl px-6 py-10 text-center text-[13px] text-muted-foreground">No transactions indexed yet. The first commit appears here within one block.</div>;
+    return <div className="surface rounded-md px-6 py-10 text-center text-[13px] text-muted-foreground">No transactions indexed yet. The first commit appears here within one block.</div>;
 
   return (
     <div className="space-y-4">
@@ -67,26 +67,26 @@ export function LedgerGraph({ rows, spans, lanes }: { rows: LedgerNode[]; spans:
           <button
             key={l.id}
             onClick={() => setLens(lens === l.id ? null : l.id)}
-            className={`glass-press rounded-full px-3.5 py-1.5 text-[13px] font-medium ${lens === l.id ? "glass-solid text-background" : "glass text-muted-foreground hover:text-foreground"}`}
+            className={`glass-press rounded px-3.5 py-1.5 text-[13px] font-medium ${lens === l.id ? "fill-gold text-background" : "surface text-muted-foreground hover:text-foreground"}`}
           >
             {l.label} <span className={lens === l.id ? "opacity-70" : "text-gold-dim"}>{counts[l.id]}</span>
           </button>
         ))}
         {(lens || focus) && (
-          <button onClick={() => (setLens(null), setFocus(null))} className="rounded-full px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground">
+          <button onClick={() => (setLens(null), setFocus(null))} className="rounded px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground">
             clear
           </button>
         )}
       </div>
       {activeLens && (
-        <div className="glass-gold rounded-2xl px-4 py-3 text-[13px] leading-relaxed">
+        <div className="surface-gold rounded px-4 py-3 text-[13px] leading-relaxed">
           <div className="font-medium text-gold">{activeLens.question}</div>
           <p className="mt-1 text-foreground/85">{activeLens.proof}</p>
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_21rem]">
-        <div className="glass overflow-hidden rounded-3xl">
+        <div className="surface overflow-hidden rounded-md">
           <div className="grid grid-cols-[auto_1fr]">
             <svg width={width} height={height} className="shrink-0 select-none" aria-hidden>
               <line x1={x(0)} x2={x(0)} y1={0} y2={height} stroke="var(--gold-faint)" strokeWidth={2} />
@@ -116,7 +116,7 @@ export function LedgerGraph({ rows, spans, lanes }: { rows: LedgerNode[]; spans:
                     className={`grid cursor-pointer grid-cols-[5rem_1fr_auto] items-center gap-3 border-b border-white/[0.05] pr-4 text-[13px] transition-colors ${sel === n.key ? "bg-white/[0.05]" : "hover:bg-white/[0.03]"} ${on ? "" : "opacity-30"}`}
                     aria-current={sel === n.key ? "true" : undefined}
                   >
-                    <span className={`w-fit rounded-full bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${n.tone === "danger" ? "text-danger" : n.tone === "dim" ? "text-gold-dim" : n.tone === "fg" ? "text-foreground" : "text-gold"}`}>
+                    <span className={`w-fit rounded bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize ${n.tone === "danger" ? "text-danger" : n.tone === "dim" ? "text-gold-dim" : n.tone === "fg" ? "text-foreground" : "text-gold"}`}>
                       {n.tag}
                     </span>
                     <span className="min-w-0">
@@ -158,7 +158,7 @@ export function LedgerGraph({ rows, spans, lanes }: { rows: LedgerNode[]; spans:
 function Detail({ n }: { n: LedgerNode }) {
   const tone = n.tone === "danger" ? "danger" : n.tone === "gold" ? "gold" : undefined;
   return (
-    <div className={`rounded-3xl p-5 ${tone === "danger" ? "glass-danger" : tone === "gold" ? "glass-gold" : "glass"}`}>
+    <div className={`rounded-md p-5 ${tone === "danger" ? "surface-danger" : tone === "gold" ? "surface-gold" : "surface"}`}>
       <div className="flex items-center justify-between gap-2">
         <span className={`text-[12px] font-medium capitalize ${n.tone === "danger" ? "text-danger" : "text-gold"}`}>{n.tag}</span>
         <span className="text-[11px] text-muted-foreground">{when(n.ts)}</span>
@@ -216,7 +216,7 @@ function Detail({ n }: { n: LedgerNode }) {
 
       <details className="mt-3 text-[11px]">
         <summary className="cursor-pointer text-muted-foreground hover:text-foreground">raw event arguments</summary>
-        <pre className="bab-scroll mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-black/30 p-3 font-mono text-[11px] text-foreground/80">
+        <pre className="bab-scroll mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded bg-black/30 p-3 font-mono text-[11px] text-foreground/80">
           {JSON.stringify(Object.fromEntries(Object.entries(n.args).map(([k, v]) => [k, typeof v === "string" && v.length > 120 ? `${v.slice(0, 120)}…` : v])), null, 1)}
         </pre>
       </details>

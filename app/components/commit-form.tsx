@@ -13,9 +13,9 @@ import { commitBasket, randomSalt } from "@/lib/merkle";
 import { basketEntities, validTerm } from "@/lib/fca";
 import { binomTail, fmtOdds, sharpness, signalRate, suggestK } from "@/lib/odds";
 import type { BasketItem, EvidencePackage } from "@/lib/package";
-import { Btn, Panel, Rule, TxLink } from "./ui";
+import { Btn, Panel, Rule, Stats, TxLink } from "./ui";
 
-const input = "glass-input w-full rounded-xl px-3 py-2 text-[13px] outline-none";
+const input = "field w-full rounded px-3 py-2 text-[13px] outline-none";
 type Row = { defendant: string; terms: string; court: string; docketId: string; docketNumber: string; entryDate: string; entryText: string; url: string };
 const blank = (): Row => ({ defendant: "", terms: "", court: "", docketId: "", docketNumber: "", entryDate: "", entryText: "", url: "" });
 
@@ -154,9 +154,9 @@ export function CommitForm() {
             One row per sealed False Claims Act case, cited to a CourtListener docket entry. A fake citation is fabrication: 100% of your bond.
             Match terms must name the defendant (6+ letters, not a sector or place).
           </p>
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 divide-y divide-border border-y border-border">
             {rows.map((r, i) => (
-              <div key={i} className="grid gap-2 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-6">
+              <div key={i} className="grid gap-2 py-3 sm:grid-cols-6">
                 <input className={`${input} sm:col-span-3`} placeholder="Defendant, e.g. Lockheed Martin Corporation" value={r.defendant} onChange={(e) => set(i, "defendant", e.target.value)} />
                 <input className={`${input} sm:col-span-3`} placeholder="Match terms, e.g. Lockheed" value={r.terms} onChange={(e) => set(i, "terms", e.target.value)} />
                 <input className={`${input} sm:col-span-2`} placeholder="Court" value={r.court} onChange={(e) => set(i, "court", e.target.value)} />
@@ -181,8 +181,8 @@ export function CommitForm() {
             <span className="label">claim · at least k of {n || "n"}</span>
             <input type="range" min={1} max={Math.max(1, n)} value={k} onChange={(e) => setKPick(Number(e.target.value))} />
           </label>
-          <div className="mt-2 flex items-stretch overflow-hidden rounded-xl">
-            <span className="glass-gold flex items-center px-3 text-[13px] font-semibold text-gold" title="Written by the contract">
+          <div className="mt-2 flex items-stretch overflow-hidden rounded">
+            <span className="surface-gold flex items-center px-3 text-[13px] font-semibold text-gold" title="Written by the contract">
               🔒 {k} of {n || "n"}
             </span>
             <input className={`${input} rounded-l-none`} placeholder={teaserBody} value={body} maxLength={240} onChange={(e) => setBody(e.target.value)} />
@@ -191,17 +191,16 @@ export function CommitForm() {
             <span className="label">deadline · {days} days ({deadlineLabel})</span>
             <input type="range" min={7} max={120} value={days} onChange={(e) => setDays(Number(e.target.value))} />
           </label>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            {[
-              ["Expected by chance", s.expected.toFixed(1)],
-              ["Random-basket odds", fmtOdds(s.randomOdds)],
-              ["At the signal rate", fmtOdds(confidence)],
-            ].map(([a, b]) => (
-              <div key={a} className="rounded-2xl bg-white/[0.03] px-2 py-2">
-                <div className="text-[11px] text-muted-foreground">{a}</div>
-                <div className="text-[16px] font-semibold">{b}</div>
-              </div>
-            ))}
+          <div className="mt-4">
+            <Stats
+              big
+              cols="grid-cols-3"
+              items={[
+                ["Expected by chance", s.expected.toFixed(1)],
+                ["Random-basket odds", fmtOdds(s.randomOdds)],
+                ["At the signal rate", fmtOdds(confidence)],
+              ]}
+            />
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
             Suggested k = {suggested}: the largest k with at least 60% odds at the backtested {(pSignal * 100).toFixed(1)}% per-item rate. Your stated confidence is
@@ -264,7 +263,7 @@ export function CommitForm() {
             {address ? <Btn variant="primary" onClick={submit} disabled={!!step}>seal & commit · bond {usd(bond)}</Btn> : <span className="text-[12px] text-muted-foreground">Connect a wallet to commit.</span>}
           </div>
           {step && <p className="live mt-3 text-[12px] text-gold-dim">{step}</p>}
-          {err && <div className="mt-3 glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
+          {err && <div className="mt-3 surface-danger rounded px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
         </Panel>
       </div>
     </div>

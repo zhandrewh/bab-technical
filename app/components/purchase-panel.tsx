@@ -78,14 +78,14 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
       <Panel>
         <Rule left="relevance preview" right="local only" />
         <p className="mt-2 text-[12px] text-muted-foreground">Your beat never leaves this browser. You see a count, not which entities matched.</p>
-        <textarea className="mt-2 h-20 glass-input w-full resize-none rounded-xl p-3 text-[12px] outline-none" value={beat} onChange={(e) => setBeat(e.target.value)} />
+        <textarea className="mt-2 h-20 field w-full resize-none rounded p-3 text-[12px] outline-none" value={beat} onChange={(e) => setBeat(e.target.value)} />
         <div className="mt-2 text-[13px]">
           touches <span className="text-gold">{overlap}</span> of {beat.split(",").filter((s) => s.trim()).length} entities on your beat
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">Bloom filter, not PSI: a determined buyer can probe it. See DESIGN.md.</p>
       </Panel>
 
-      <Panel tone="gold">
+      <Panel tone="raised">
         <Rule left="buy blind" right={usd(price)} />
         <div className="mt-3 space-y-1 text-[13px]">
           <div className="flex justify-between"><span className="text-gold-dim">upfront → seller now</span><span>{usd(BigInt(c.currentUpfront))}</span></div>
@@ -109,7 +109,7 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
         {expired && !pkg && <p className="mt-2 text-[12px] text-gold">Exclusivity expired: anyone can request the key now. No purchase needed.</p>}
         {step && <p className="mt-3 text-[12px] text-gold-dim">{step}</p>}
         {txs.map(([l, h]) => <div key={h} className="mt-1 text-[12px]">{l} ✓ <TxLink hash={h} /></div>)}
-        {err && <div className="mt-3 glass-danger rounded-2xl px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
+        {err && <div className="mt-3 surface-danger rounded px-3 py-2 text-[12px]"><span className="font-medium text-danger">Error:</span> {err}</div>}
       </Panel>
 
       {pkg && (
@@ -119,9 +119,9 @@ export function PurchasePanel({ claim: c }: { claim: ClaimView }) {
           <div className="mt-2 text-[11px]">
             {rootOk ? <span className="text-gold">✓ all {pkg.items.length} items verify against the committed root</span> : <span className="text-danger">basket does not match itemsRoot</span>}
           </div>
-          <ol className="mt-3 space-y-2">
+          <ol className="mt-3 divide-y divide-border border-y border-border">
             {pkg.items.map((it, i) => (
-              <li key={i} className="rounded-2xl bg-white/[0.03] px-3 py-2 text-[12px]">
+              <li key={i} className="py-2.5 text-[12px]">
                 <div className="font-medium text-foreground">{i + 1}. {it.defendant}</div>
                 <div className="text-muted-foreground">
                   {it.court} · {it.docketNumber} · filed {it.entryDate} · watching for “{it.matchTerms.join("” / “")}”

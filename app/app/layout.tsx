@@ -5,7 +5,6 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { HexBackground } from "@/components/hex-background";
 import { WalletButton } from "@/components/wallet";
-import { GlassPointer } from "@/components/glass-pointer";
 
 // Only the weights the UI uses (no font-light anywhere); each extra weight is another font file per visitor.
 const sans = Poppins({ weight: ["400", "500", "600"], subsets: ["latin"], variable: "--font-poppins" });
@@ -13,7 +12,7 @@ const mono = DM_Mono({ weight: ["400", "500"], subsets: ["latin"], variable: "--
 const serif = EB_Garamond({ subsets: ["latin"], variable: "--font-garamond" });
 
 export const metadata: Metadata = {
-  title: "verity — sealed accountability findings",
+  title: "Verity",
   description: "A market where observers of public records get paid for being early and right — and only if the finding reaches the public.",
 };
 
@@ -24,7 +23,6 @@ const NAV = [
   ["ledger", "/ledger"],
   ["agents", "/agents"],
   ["commit", "/commit"],
-  ["bids", "/bids"],
 ] as const;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -33,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col antialiased">
         <Providers>
           <HexBackground />
-          <GlassPointer />
           <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3 sm:px-6">
               <Link href="/" className="flex items-baseline gap-2">
@@ -54,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
           <footer className="border-t border-border/50">
             <div className="flex justify-center px-4 py-5 text-[12px]">
-              <span className="glass-gold rounded-full px-2.5 py-0.5 text-gold">Base Sepolia</span>
+              <span className="surface-gold rounded px-2.5 py-0.5 text-gold">Base Sepolia</span>
             </div>
           </footer>
         </Providers>
