@@ -1,5 +1,4 @@
+# Prebuilt deploys reference node_modules/.next via each function's filePathMap — never ignore those.
 .env*
 !.env.example
-node_modules
-.next
 scripts
