@@ -149,11 +149,19 @@ export async function commitClaim(pkg: EvidencePackage, pricing: ReturnType<type
   return claimId;
 }
 
-export async function runSeller(opts: { backfill?: boolean; max?: number; exclusivitySeconds?: bigint; deadlineHours?: number } = {}) {
+export async function runSeller(
+  opts: { backfill?: boolean; max?: number; exclusivitySeconds?: bigint; deadlineHours?: number; preferAgencies?: string[] } = {},
+) {
   const backfill = !!opts.backfill;
   log("seller", `polling Federal Register ${backfill ? "(backfill: already-published issue)" : "public inspection"}…`);
   const docs = await fetchCandidates(backfill);
-  const ranked = docs.map((d) => ({ d, s: scoreCandidate(d) })).sort((a, b) => b.s - a.s).slice(0, opts.max ?? 1);
+  // Standing demand (e.g. open bids or a known buyer beat) steers which filings are worth packaging first.
+  const prefer = new Set((opts.preferAgencies ?? []).map((a) => a.replace(/^agency:/, "")));
+  const wanted = (d: PI) => d.agencies.some((a) => prefer.has(a.slug));
+  const ranked = docs
+    .map((d) => ({ d, s: scoreCandidate(d) + (wanted(d) ? 10 : 0) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, opts.max ?? 1);
   log("seller", `${docs.length} filings scanned; ${ranked.length} worth a claim`);
   const ids: bigint[] = [];
   for (const { d, s } of ranked) {

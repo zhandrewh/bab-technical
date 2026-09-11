@@ -8,7 +8,7 @@ import { log, dim, warn, sleep, wallet, publicClient } from "./env";
 import { marketAbi } from "../lib/abi";
 import { runFabricator } from "./fabricator";
 import { runSeller } from "./seller-fedreg";
-import { runBuyer } from "./buyer-newsroom";
+import { runBuyer, BEAT } from "./buyer-newsroom";
 import { runOracleUntilSettled } from "./oracle";
 import { keyRequestMessage } from "../lib/keyRelease";
 import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
@@ -40,7 +40,8 @@ const banner = (s: string) => console.log(`\n\x1b[38;2;254;203;51m━━━ ${s}
   log("demo", `claim #${fake} FABRICATED — bond slashed, buyer made whole. ${API}/claim/${fake}`);
 
   banner("ACT 2 · THE HAPPY PATH (live Federal Register data)");
-  const [real] = await runSeller({ backfill: true, max: 1, exclusivitySeconds: ex, deadlineHours: 48 });
+  // The seller steers toward demand it can see (the newsroom's public standing interest), so the buyer has overlap.
+  const [real] = await runSeller({ backfill: true, max: 1, exclusivitySeconds: ex, deadlineHours: 48, preferAgencies: BEAT });
   await runBuyer(real.toString());
   log("demo", "oracle resolving…");
   await runOracleUntilSettled([real], 8_000);
@@ -50,9 +51,14 @@ const banner = (s: string) => console.log(`\n\x1b[38;2;254;203;51m━━━ ${s}
   const [open] = await runSeller({ backfill: true, max: 1, exclusivitySeconds: 60n, deadlineHours: 48 });
   const stranger = privateKeyToAccount(generatePrivateKey());
   const ask = async () => {
-    const issuedAt = Math.floor(Date.now() / 1000);
-    const signature = await stranger.signMessage({ message: keyRequestMessage(open, issuedAt) });
-    return fetch(`${API}/api/key/${open}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: stranger.address, signature, issuedAt }) });
+    // 404 = the key layer's rpc hasn't seen the brand-new claim yet; retry until it gives a real answer.
+    for (let i = 0; ; i++) {
+      const issuedAt = Math.floor(Date.now() / 1000);
+      const signature = await stranger.signMessage({ message: keyRequestMessage(open, issuedAt) });
+      const r = await fetch(`${API}/api/key/${open}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: stranger.address, signature, issuedAt }) });
+      if (r.status !== 404 || i >= 15) return r;
+      await sleep(2000);
+    }
   };
   log("demo", `stranger ${stranger.address.slice(0, 10)}… asks for the key now -> HTTP ${(await ask()).status}`);
   dim("waiting 65s for exclusivity to expire (fixed at commit; neither party can move it)…");

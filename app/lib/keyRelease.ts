@@ -36,11 +36,17 @@ export class CustodianKeyRelease implements KeyReleaseProvider {
     const valid = await verifyMessage({ address: requester, message: keyRequestMessage(claimId, proof.issuedAt), signature: proof.signature });
     if (!valid) return { ok: false, status: 401, error: "bad signature" };
 
-    const [canDecrypt, isOracle, claim] = await Promise.all([
-      publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "canDecrypt", args: [claimId, requester] }),
-      publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "oracles", args: [requester] }),
-      publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "getClaim", args: [claimId] }),
-    ]);
+    let canDecrypt: boolean, isOracle: boolean, claim: { exclusivityEnd: bigint };
+    try {
+      [canDecrypt, isOracle, claim] = await Promise.all([
+        publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "canDecrypt", args: [claimId, requester] }),
+        publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "oracles", args: [requester] }),
+        publicClient.readContract({ address: MARKET, abi: marketAbi, functionName: "getClaim", args: [claimId] }),
+      ]);
+    } catch {
+      // Out-of-range claim ids revert; a just-committed claim can also be invisible to a lagging RPC node.
+      return { ok: false, status: 404, error: `claim ${claimId} not found (or not yet visible to the key layer's rpc)` };
+    }
     if (!canDecrypt && !isOracle) return { ok: false, status: 403, error: "not purchased and exclusivity has not expired" };
 
     const uri = await payloadURIOf(claimId);

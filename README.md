@@ -4,7 +4,8 @@
 
 Verity is the inverse of the Truth API. The Truth API sells a *manufactured* window: information that would be instantly public, withheld from non-payers. Verity sells a *discovered* window: facts sitting unread in public records, sold on the condition that they become public.
 
-- **Live app:** _pending Vercel deploy_
+- **Live app:** https://verity-andrew-2d2a.vercel.app
+- **Agent API:** https://verity-andrew-2d2a.vercel.app/api/x402/claims
 - **Chain:** Base Sepolia (84532) · USDC `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
 
 | Contract | Address |
